@@ -4,7 +4,7 @@ from django.db import models
 
 class Medication(models.Model):
     def __str__(self):
-        return self.name
+        return self.name + ' ' + str(self.price)
 
     name = models.CharField(max_length=100)
     #indications = 

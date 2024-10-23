@@ -3,6 +3,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm #do logowania
 from django.contrib.auth import authenticate,login, logout #^
 
+from .forms import CustomUserCreationForm #custom formsy do rejestracji
+
 # Create your views here.
 from django.http import HttpResponse
 from .models import Medication
@@ -36,17 +38,17 @@ def loginPage(request):
 
 
 def registerPage(request):
-    form = UserCreationForm()
-
+    #form = UserCreationForm()
+    #form = CustomUserCreationForm()
 
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            #login(request, user)  # Automatyczne logowanie po rejestracji
-            #return redirect('loginPage')
+            login(request, user)  # Automatyczne logowanie po rejestracji
+            return redirect('index') # 
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
 
     context = {"form":form}
     return render(request, 'register.html', context)
