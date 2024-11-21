@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Pharmacy{% endblock %}</title>
+</head>
+<body>
+    <!-- Nagłówek strony -->
+    <header>
+        <nav>
+            <!-- Inne linki do nawigacji -->
+            <a href="{% url 'index' %}">Home</a>
+            <a href="{% url 'products' %}">Products</a>
+            <a href="{% url 'cart_view' %}">
+                <div class="cart-icon">
+                    <img src="cart-icon.png" alt="Cart">
+                    <span id="cart-count">{{ request.session.cart|length|default:0 }}</span>
+                </div>
+            </a>
+           </nav>
+    </header>
+
+    <!-- Zawartość strony -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <!-- Informacje o stopce -->
+    </footer>
+</body>
+</html>
