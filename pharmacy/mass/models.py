@@ -10,13 +10,11 @@ class Medication(models.Model):
         return self.name + ' ' + str(self.price) + 'zł'
 
     name = models.CharField(max_length=100)
-    #indications = 
     side_effects = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
-    description = models.TextField(null=True, blank=True)  
-
-    image = models.ImageField(upload_to='MASS-main\image', null=True, blank=True) 
+    description = models.TextField(null=True, blank=True)
+    image = models.ImageField(upload_to='MASS-main\image', null=True, blank=True)
+    stock_quantity = models.PositiveIntegerField(default=0)
 
 
     def __str__(self):
@@ -39,9 +37,11 @@ class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     contents = models.ManyToManyField(Medication, through='OrderItem')
     date_of_order = models.DateField(default=datetime.now)
+    shipping_address = models.CharField(max_length=255,default="")
+    phone_number = models.CharField(max_length=255,default="")
 
     def __str__(self):
-        return f"Order of user: {self.user}  \n Date of order:   {self.date_of_order}"
+        return f"{self.user.username} {self.date_of_order} {self.shipping_address} {self.phone_number}"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -67,7 +67,4 @@ class ExtendedUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     prescriptions = models.ManyToManyField(Prescription, blank=True)
     user_orders = models.ManyToManyField(Order, blank=True)
-
-    #cart = models.ManyToManyField(Medication, blank=True)
-
     cart = models.OneToOneField(Cart, on_delete=models.CASCADE, null=True)

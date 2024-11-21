@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, CheckoutForm
 from django.http import HttpResponse
-from .models import Medication, Cart, CartItem, ExtendedUser
+from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 
@@ -18,7 +20,7 @@ def products(request):
     context = {"medications": medications}
     return render(request, 'products.html', context)
 
-def loginPage(request):
+def login_page(request):
     form = UserCreationForm()
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -30,7 +32,7 @@ def loginPage(request):
     context = {"form": form}
     return render(request, 'login.html', context)
 
-def registerPage(request):
+def register_page(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
@@ -42,7 +44,7 @@ def registerPage(request):
     context = {"form": form}
     return render(request, 'register.html', context)
 
-def logOutPage(request):
+def log_out_page(request):
     logout(request)
     return redirect('loginPage')
 
@@ -90,3 +92,48 @@ def cart_view(request):
     
     grand_total = sum(item.quantity * item.medication.price for item in cart_items)
     return render(request, 'cart.html', {'cart_items': cart_items, 'grand_total': grand_total})
+
+def checkout_view(request):
+    if request.method == 'POST':
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            # Przetwarzanie danych formularza
+            first_name = form.cleaned_data['first_name']
+            last_name = form.cleaned_data['last_name']
+            address = form.cleaned_data['address']
+            city = form.cleaned_data['city']
+            zip_code = form.cleaned_data['zip_code']
+            phone = form.cleaned_data['phone']
+            payment = form.cleaned_data['payment']
+
+            # Tworzenie zamówienia i przypisanie do użytkownika
+            user = ExtendedUser.objects.get(user=request.user)
+            cart = user.cart
+
+            order = Order.objects.create(user=user, date_ordered=datetime.now())
+
+            for cart_item in cart.items.all():
+                OrderItem.objects.create(order=order,
+                                         medication=cart_item.medication,
+                                         quantity=cart_item.quantity)
+            order.shipping_address = f"{address}, {city}, {zip_code}"
+            order.phone_number = phone
+
+            order.save()
+            user.user_orders.add(order)
+            cart.items.clear()
+
+            return redirect('payment_view')
+
+        else:
+
+            form = CheckoutForm()
+
+    return render(request, 'checkout.html', {'form': form})
+
+
+#def payment_view()
+
+#@login_required
+#def user_account(request):
+
