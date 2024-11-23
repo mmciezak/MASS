@@ -143,6 +143,21 @@ def order_success(request, order_id):
 
     return render(request, 'success.html', {'order': order})
 
-#@login_required
-#def user_account(request):
+@login_required
+def user_account_view(request):
+    user = request.user
+
+    try:
+        extended_user = ExtendedUser.objects.get(user=user)
+    except ExtendedUser.DoesNotExist:
+        extended_user = None
+
+    orders = Order.objects.filter(user=user).order_by('-date_of_order')
+
+    context = {
+        'user': user,
+        'extended_user': extended_user,
+        'orders': orders,
+    }
+    return render(request, 'my_account.html', context)
 

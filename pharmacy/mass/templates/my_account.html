@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Witaj, {{ user.first_name }} {{ user.last_name }}</h1>
+
+        <!-- User Details -->
+        <section>
+            <h2>Twoje konto</h2>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            {% if extended_user %}
+                <p><strong>Numer telefonu:</strong> {{ extended_user.phone_number }}</p>
+                <p><strong>Adres:</strong> {{ extended_user.address }}</p>
+            {% else %}
+                <p><em>Additional profile details are not available.</em></p>
+            {% endif %}
+        </section>
+
+        <!-- Orders -->
+        <section>
+            <h2>Zamówienia</h2>
+            {% if orders %}
+                <ul>
+                    {% for order in orders %}
+                        <li>
+                            <strong>Zamówienie:</strong> {{ order.id }} <br>
+                            <strong>Data:</strong> {{ order.date_of_order }} <br>
+                            <strong>Suma:</strong> ${{ order.total }} <br>
+                            <strong>Status:</strong> {{ order.status }} <br>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Nie masz jeszcze zamówień.</p>
+            {% endif %}
+        </section>
+
+        <!-- Logout -->
+        <a href="{% url 'logout' %}">Wyloguj</a>
+    </div>
+</body>
+</html>
