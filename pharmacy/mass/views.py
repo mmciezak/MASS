@@ -124,6 +124,7 @@ def checkout_view(request):
                                          medication=cart_item.medication,
                                          quantity=cart_item.quantity)
 
+            order.save()
             order.total = order.calculate_total()
 
             order.save()
