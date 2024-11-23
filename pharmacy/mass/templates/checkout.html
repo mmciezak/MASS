@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podsumowanie</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;  /* Increased width for better layout */
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 20px;
+        }
+        .form-container {
+            flex: 1;  /* Take the remaining space */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .price-container {
+            width: 200px;
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Price Summary on the left -->
+        <div class="price-container">
+            <h3>Podsumowanie</h3>
+            <p><strong>Całkowita cena:</strong> {{ order.total }} PLN</p> <!-- You can dynamically pass total_price from your view -->
+        </div>
+
+        <!-- Form on the right -->
+        <div class="form-container">
+            <h2>Wprowadź dane</h2>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}  <!-- Renders the form fields using Django's helper -->
+                <button type="submit">Zapłać</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -34,26 +34,37 @@ class Prescription(models.Model):
 
 
 class Order(models.Model):
+    class Status(models.TextChoices):
+        PAID = 'paid', 'Paid'
+        PENDING = 'pending', 'Pending'
+        SENT = 'sent', 'Sent'
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     contents = models.ManyToManyField(Medication, through='OrderItem')
     date_of_order = models.DateField(default=datetime.now)
     shipping_address = models.CharField(max_length=255,default="")
-    phone_number = models.CharField(max_length=255,default="")
+    phone_number = models.DecimalField(max_digits=9, decimal_places=0)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PAID)
+    total = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+    payment_method = models.TextField(default="")
+
+    def calculate_total(self):
+        total = sum(item.subtotal() for item in self.order_items.all())
+        return total
 
     def __str__(self):
         return f"{self.user.username} {self.date_of_order} {self.shipping_address} {self.phone_number}"
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
     medication = models.ForeignKey(Medication, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
 
+    def subtotal(self):
+        return self.quantity * self.medication.price
     def __str__(self):
         return f"{self.quantity} of {self.medication.name}"
     
-
-
-
 
 class CartItem(models.Model):
     medication = models.ForeignKey(Medication, on_delete=models.CASCADE)

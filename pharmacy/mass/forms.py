@@ -30,17 +30,17 @@ class CheckoutForm(forms.Form):
     address = forms.CharField(max_length=255, label="Adres", widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'Wprowadź swój adres do wysyłki'
     }))
-    city = forms.CharField(max_length=100, label="Miasto", widget=forms.TextInput(attrs={
+    city = forms.CharField(max_length=50, label="Miasto", widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'Miasto'
     }))
-    zip_code = forms.CharField(max_length=20, label="Kod pocztowy", widget=forms.TextInput(attrs={
-        'class': 'form-control', 'placeholder': 'Kod pocztowy'
+    zip_code = forms.CharField(max_length=6, label="Kod pocztowy", widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': 'XX-XXX'
     }))
-    phone = forms.CharField(max_length=15, label="Numer telefonu", widget=forms.TextInput(attrs={
-        'class': 'form-control', 'placeholder': 'Numer telefonu'
+    phone = forms.CharField(max_length=10, label="Numer telefonu", widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': '+48'
     }))
     payment = forms.ChoiceField(
-        choices=[('karta', 'Karta kredytowa/debetowa'), ('paypal', 'PayPal')],
+        choices=[('card', 'Karta kredytowa/debetowa'), ('blik', 'Blik')],
         label="Metoda płatności",
         widget=forms.RadioSelect
     )

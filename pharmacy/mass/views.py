@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import stripe
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
@@ -94,10 +94,11 @@ def cart_view(request):
     return render(request, 'cart.html', {'cart_items': cart_items, 'grand_total': grand_total})
 
 def checkout_view(request):
+    form = CheckoutForm()
+    order = None
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
         if form.is_valid():
-            # Przetwarzanie danych formularza
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
             address = form.cleaned_data['address']
@@ -106,33 +107,40 @@ def checkout_view(request):
             phone = form.cleaned_data['phone']
             payment = form.cleaned_data['payment']
 
-            # Tworzenie zamówienia i przypisanie do użytkownika
+
             user = ExtendedUser.objects.get(user=request.user)
             cart = user.cart
 
-            order = Order.objects.create(user=user, date_ordered=datetime.now())
+            order = Order.objects.create(
+                user=user.user,
+                date_of_order=datetime.now(),
+                shipping_address=f"{address}, {city}, {zip_code}",
+                phone_number=phone,
+                payment_method=payment,
+            )
 
             for cart_item in cart.items.all():
                 OrderItem.objects.create(order=order,
                                          medication=cart_item.medication,
                                          quantity=cart_item.quantity)
-            order.shipping_address = f"{address}, {city}, {zip_code}"
-            order.phone_number = phone
+
+            order.total = order.calculate_total()
 
             order.save()
             user.user_orders.add(order)
             cart.items.clear()
 
-            return redirect('payment_view')
+            return redirect('order_success', order_id=order.id)
 
         else:
-
             form = CheckoutForm()
 
-    return render(request, 'checkout.html', {'form': form})
+    return render(request, 'checkout.html', {'form': form,'order': order})
 
+def order_success(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
 
-#def payment_view()
+    return render(request, 'success.html', {'order': order})
 
 #@login_required
 #def user_account(request):
