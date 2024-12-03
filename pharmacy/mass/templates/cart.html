@@ -1,65 +1,167 @@
-{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Cart</title>
+    <title>Twój Koszyk</title>
     <style>
-        button {
-            background-color: #45a049;
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #38b2ac;
             color: white;
-            padding: 10px 12px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        td {
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 15px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .remove-button {
+            background-color: #e53e3e;
+            color: white;
+            padding: 10px 18px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            transition: background-color 0.3s ease;
-            width: 10%;
-            margin-top: 15px;
-            margin-bottom: 10px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
         }
-        @media (max-width: 600px) {
-            button {
+
+        .remove-button:hover {
+            background-color: #c53030;
+            transform: scale(1.05);
+        }
+
+        .button-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button-container a button {
+            background-color: #3182ce;
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container a button:hover {
+            background-color: #2b6cb0;
+            transform: translateY(-2px);
+        }
+
+        .total {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3748;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .button-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .button-container a button {
                 width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <h2>Your Cart</h2>
+    <h2>Twój Koszyk</h2>
 
     {% if cart_items %}
-    <ul>
-        {% for item in cart_items %}
-        <li>
-            {{ item.medication.name }} - {{ item.quantity }} x {{ item.medication.price }} PLN = 
-            {{ item.quantity|multiply:item.medication.price }} PLN
-            <form action="{% url 'remove_from_cart' item.id %}" method="POST" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" onclick="return confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')">Remove</button>
-            </form>
-        </li>
-        {% endfor %}
-    </ul>
-    <hr>
-    <h3>Total: {{ grand_total }} PLN</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Ilość</th>
+                <th>Cena</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>{{ item.medication.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.medication.price }} PLN</td>
+                <td>
+                    <form action="{% url 'remove_from_cart' item.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="remove-button" onclick="return confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')">Usuń</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="total">Łączna kwota: {{ grand_total }} PLN</p>
+
+    <div class="button-container">
+        <a href="{% url 'products' %}"><button>Przeglądaj produkty</button></a>
+        <a href="{% url 'checkout_view' %}"><button>Zamów</button></a>
+        <a href="javascript:history.back()"><button>Wróć</button></a>
+    </div>
     {% else %}
-    <p>Twój koszyk jest pusty.</p>
-    <a href="{% url 'products' %}">
-        <button>Przeglądaj produkty</button>
-    </a>
+    <p style="text-align: center; font-size: 16px;">Twój koszyk jest pusty.</p>
+    <div class="button-container">
+        <a href="{% url 'products' %}"><button>Przeglądaj produkty</button></a>
+    </div>
     {% endif %}
-    
-    <div>
-        <a href="{% url 'products' %}">
-            <button>Wróć</button>
-        </a>
-    </div>
-    <div>
-        <a href="{% url 'checkout_view' %}">
-            <button>Zamów</button>
-        </a>
-    </div>
 </body>
 </html>

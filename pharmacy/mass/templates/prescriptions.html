@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Prescriptions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+        h1 {
+            color: #333;
+        }
+        .prescription {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .prescription h2 {
+            margin: 0;
+        }
+        .add-prescription {
+            margin-top: 20px;
+        }
+        .add-prescription input[type="text"] {
+            padding: 8px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        .add-prescription button {
+            padding: 8px 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .add-prescription button:hover {
+            background-color: #0056b3;
+        }
+        .messages {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .messages.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .messages.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .messages.warning {
+            background-color: #fff3cd;  /* Kolor tła dla ostrzeżenia */
+            color: #856404;  /* Ciemnożółty tekst */
+            border: 1px solid #ffeeba;  /* Złota granica */
+        }
+        .realized-status {
+            font-weight: bold;
+            color: #28a745;  /* Green color for realized */
+        }
+        .not-realized-status {
+            font-weight: bold;
+            color: #ffc107;  /* Yellow color for not realized */
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Prescriptions</h1>
+
+    {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+                <div class="messages {{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if prescriptions.exists %}
+        {% for prescription in prescriptions %}
+        <div class="prescription">
+            <h2>Prescription ID: {{ prescription.prescription_ID }}</h2>
+            <p>Patient Name: {{ prescription.patient_name }}</p>
+            <p>Date Prescribed: {{ prescription.date_prescribed }}</p>
+            <p>Medications:</p>
+            <ul>
+                {% for medication in prescription.medications.all %}
+                <li>{{ medication.name }}</li>
+                {% endfor %}
+            </ul>
+            
+            <p>Status: 
+                {% if prescription.realized %}
+                    <span class="realized-status">Realized</span>
+                {% else %}
+                    <span class="not-realized-status">Not Realized</span>
+                    <form action="{% url 'realize_prescription' prescription.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Zrealizuj</button>
+                    </form>
+                {% endif %}
+            </p>
+
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>You have no prescriptions added.</p>
+    {% endif %}
+
+    <div class="add-prescription">
+        <h2>Add a New Prescription</h2>
+        <form method="POST" action="{% url 'add_prescription' %}">
+            {% csrf_token %}
+            <input type="text" name="prescription_id" placeholder="Enter Prescription ID" required>
+            <button type="submit">Add Prescription</button>
+        </form>
+    </div>
+</body>
+</html>

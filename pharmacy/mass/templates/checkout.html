@@ -6,38 +6,51 @@
     <title>Podsumowanie</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f9f9f9;
+            background: linear-gradient(120deg, #f0f9ff, #cce7f0);
+            color: #333;
         }
         .container {
-            max-width: 800px;  /* Increased width for better layout */
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
             display: flex;
-            gap: 20px;
-        }
-        .form-container {
-            flex: 1;  /* Take the remaining space */
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            flex-wrap: wrap;
+            overflow: hidden;
         }
         .price-container {
-            width: 200px;
-            background-color: #f8f8f8;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+            background: linear-gradient(135deg, #38b2ac, #2c7a7b);
+            color: white;
+            padding: 30px;
             text-align: center;
         }
+        .price-container h3 {
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .price-container p {
+            font-size: 18px;
+            margin: 0;
+        }
+        .form-container {
+            flex: 2;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
         h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
             text-align: center;
-            margin-bottom: 20px;
+            color: #2d3748;
         }
         form {
             display: flex;
@@ -45,43 +58,82 @@
             gap: 15px;
         }
         input, select, button {
-            padding: 10px;
+            padding: 12px 15px;
             font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input:focus, select:focus {
+            border-color: #38b2ac;
+            box-shadow: 0 0 5px rgba(56, 178, 172, 0.5);
         }
         button {
-            background-color: #28a745;
+            padding: 14px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #38b2ac, #2c7a7b);
             color: white;
             cursor: pointer;
-            border: none;
+            transition: background 0.3s ease, transform 0.2s ease;
         }
         button:hover {
-            background-color: #218838;
+            background: linear-gradient(135deg, #319795, #285e61);
+            transform: translateY(-2px);
+        }
+        .back-button {
+            background: linear-gradient(135deg, #3182ce, #2b6cb0);
+        }
+        .back-button:hover {
+            background: linear-gradient(135deg, #2b6cb0, #2c5282);
         }
         .error {
             color: red;
             font-size: 14px;
         }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .price-container, .form-container {
+                min-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Price Summary on the left -->
+        <!-- Price Summary -->
         <div class="price-container">
             <h3>Podsumowanie</h3>
-            <p><strong>Całkowita cena:</strong> {{ order.total }} PLN</p> <!-- You can dynamically pass total_price from your view -->
+            <p><strong>Całkowita cena:</strong> <span id="total-price">{{ grand_total }}</span> PLN</p>
         </div>
 
-        <!-- Form on the right -->
+        <!-- Form -->
         <div class="form-container">
             <h2>Wprowadź dane</h2>
             <form method="POST">
                 {% csrf_token %}
-                {{ form.as_p }}  <!-- Renders the form fields using Django's helper -->
+                {{ form.as_p }}
                 <button type="submit">Zapłać</button>
             </form>
+            <a href="{% url 'cart_view' %}">
+                <button class="back-button">Wróć do koszyka</button>
+            </a>
         </div>
     </div>
+
+    <!-- Dynamic Price Calculation -->
+    <script>
+        const totalPriceElement = document.getElementById('total-price');
+
+        document.querySelector('form').addEventListener('input', function () {
+            let totalPrice = {{ grand_total }};
+           
+            totalPriceElement.textContent = totalPrice.toFixed(2);
+        });
+    </script>
 </body>
 </html>

@@ -27,10 +27,20 @@ class Prescription(models.Model):
     patient_name = models.CharField(max_length=255) # User 
     date_prescribed = models.DateField(default=datetime.now)
     medications = models.ManyToManyField(Medication)
-    dosage = models.CharField(max_length=100,null=True)
+    #dosage = models.CharField(max_length=100,null=True)
+    realized = models.BooleanField(default=False)
+    added = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Prescription for {self.patient_name} on {self.date_prescribed}"
+    
+    def mark_as_realized(self):
+        self.realized = True
+        self.save()
+
+    def mark_as_added(self):
+        self.added = True
+        self.save()
 
 
 class Order(models.Model):
@@ -68,6 +78,7 @@ class OrderItem(models.Model):
 
 class CartItem(models.Model):
     medication = models.ForeignKey(Medication, on_delete=models.CASCADE)
+    #medication_id = models.PositiveIntegerField()
     quantity = models.PositiveIntegerField()
     
 class Cart(models.Model):
@@ -78,4 +89,5 @@ class ExtendedUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     prescriptions = models.ManyToManyField(Prescription, blank=True)
     user_orders = models.ManyToManyField(Order, blank=True)
-    cart = models.OneToOneField(Cart, on_delete=models.CASCADE, null=True)
+    cart = models.OneToOneField(Cart, on_delete=models.CASCADE, null=True, related_name='user_cart')
+    prescription_cart = models.OneToOneField(Cart, on_delete=models.CASCADE, null=True, related_name='prescription_user_cart')
