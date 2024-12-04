@@ -19,6 +19,7 @@ class Medication(models.Model):
         DIGESTIVE = 'digestive', 'Trawienie'
         CONTRACEPTION = 'contraception', 'Antykoncepcja'
         VITAMINS = 'vitamins', 'Witaminy'
+        OTHER = 'inne', 'Inne'
 
 
 
@@ -28,7 +29,7 @@ class Medication(models.Model):
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(upload_to='MASS-main\image', null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
-    category_tag = models.CharField(max_length=20, choices=Category.choices, default='')
+    category_tag = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
 
 
 

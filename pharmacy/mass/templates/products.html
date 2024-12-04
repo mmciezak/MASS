@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista Leków</title>
+    <title>MASS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -24,7 +24,7 @@
             margin-top: 20px;
             width: 100%;
         }
-        
+
         .medication-item {
             background-color: #ffffff;
             border: 2px solid #d1e7e7;
@@ -44,20 +44,20 @@
             transform: scale(1.05);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
-        
+
         .medication-description {
             font-size: 13px;
             color: #555;
             margin-bottom: 8px;
             text-align: left;
         }
-        
+
         .medication-image {
             max-height: 100px;
             object-fit: contain;
             margin-bottom: 8px;
         }
-        
+
         .medication-price {
             font-size: 16px;
             font-weight: bold;
@@ -121,7 +121,7 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
-        
+
         @media (max-width: 768px) {
             .container-row {
                 grid-template-columns: 1fr 1fr;
@@ -146,7 +146,7 @@
                 width: 50px;
             }
         }
-        
+
         /* New styling for the icons and buttons */
         .icon-container {
             position: fixed;
@@ -189,8 +189,17 @@
             <button>Recepty</button>
         </a>
     </div>
-    
+
     <h1>Dostępne leki</h1>
+    <form method="GET" action="{% url 'products' %}">
+    <label for="category">Filtruj:</label>
+    <select name="category" id="category" onchange="this.form.submit()">
+        <option value="">Wszystkie</option>
+        {% for key, label in categories %}
+            <option value="{{ key }}" {% if request.GET.category == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</form>
     <div class="container-row">
         {% for medication in medications %}
             <div class="medication-item">
@@ -219,6 +228,6 @@
         <a href="{% url 'index' %}">
             <button>Wróć</button>
         </a>
-    </div>    
+    </div>
 </body>
 </html>

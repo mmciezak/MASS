@@ -20,6 +20,16 @@ def products(request):
     context = {"medications": medications}
     return render(request, 'products.html', context)
 
+def filter_list(request):
+    category = request.GET.get('category')
+    if category:
+        medications = Medication.objects.filter(category_tag=category)
+    else:
+        medications = Medication.objects.all()
+
+    categories = Medication.Category.choices
+    return render(request, 'products.html', {'medications' : medications, 'categories': categories})
+
 def login_page(request):
     form = UserCreationForm()
     if request.method == 'POST':
