@@ -22,10 +22,14 @@ def products(request):
 
 def filter_list(request):
     category = request.GET.get('category')
+    search = request.GET.get('search')
+
+    medications = Medication.objects.all()
     if category:
-        medications = Medication.objects.filter(category_tag=category)
-    else:
-        medications = Medication.objects.all()
+        medications = medications.filter(category_tag=category)
+    if search:
+        medications = medications.filter(name__icontains=search) | medications.filter(description__icontains=search)
+
 
     categories = Medication.Category.choices
     return render(request, 'products.html', {'medications' : medications, 'categories': categories})

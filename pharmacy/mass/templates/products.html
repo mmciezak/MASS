@@ -192,14 +192,20 @@
 
     <h1>Dostępne leki</h1>
     <form method="GET" action="{% url 'products' %}">
-    <label for="category">Filtruj:</label>
-    <select name="category" id="category" onchange="this.form.submit()">
-        <option value="">Wszystkie</option>
-        {% for key, label in categories %}
-            <option value="{{ key }}" {% if request.GET.category == key %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-    </select>
-</form>
+        <label for="category">Filtruj:</label>
+        <select name="category" id="category">
+            <option value="">Wszystkie</option>
+            {% for key, label in categories %}
+                <option value="{{ key }}" {% if request.GET.category == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        
+        <label for="search">Wyszukaj:</label>
+        <input type="text" name="search" id="search" value="{{ request.GET.search }}" placeholder="Wpisz nazwę leku...">
+    
+        <button type="submit">Zastosuj</button>
+    </form>
+    
     <div class="container-row">
         {% for medication in medications %}
             <div class="medication-item">
