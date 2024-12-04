@@ -9,12 +9,27 @@ class Medication(models.Model):
     def __str__(self):
         return self.name + ' ' + str(self.price) + 'zł'
 
+    class Category(models.TextChoices):
+        PAIN = 'pain', 'Ból'
+        ALLERGY ='allergy', 'Alergia'
+        DIABETIC = 'diabetic', 'Diabetyk'
+        SKIN = 'skin', 'Skóra'
+        COLD = 'cold', 'Przeziębienie'
+        WOUNDS = 'wounds', 'Rany i oparzenia'
+        DIGESTIVE = 'digestive', 'Trawienie'
+        CONTRACEPTION = 'contraception', 'Antykoncepcja'
+        VITAMINS = 'vitamins', 'Witaminy'
+
+
+
     name = models.CharField(max_length=100)
     side_effects = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(upload_to='MASS-main\image', null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
+    category_tag = models.CharField(max_length=20, choices=Category.choices, default='')
+
 
 
     def __str__(self):
