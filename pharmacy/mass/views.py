@@ -37,6 +37,14 @@ def register_page(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            
+            # stworzenie koszyka
+            extended_user = ExtendedUser.objects.create(
+                user=user,
+                cart=Cart.objects.create(),
+                prescription_cart=Cart.objects.create()  # opcjonalne, jeśli potrzebny koszyk na recepty
+            )
+
             login(request, user)  
             return redirect('index')
     else:
@@ -71,13 +79,17 @@ def add_to_cart(request, medication_id):
     else:
         cart = extended_user.cart
 
-    # Sprawdź, czy istnieje już element w koszyku i zaktualizuj ilość
-    cart_item, created = CartItem.objects.get_or_create(medication=medication, defaults={'quantity': quantity})
-    if not created:
-        cart_item.quantity += quantity
-        cart_item.save()
-
-    cart.items.add(cart_item)
+    # Sprawdź, czy istnieje już CartItem z tą samą instancją `medication` w tym koszyku
+    existing_cart_item = cart.items.filter(medication=medication).first()
+    
+    if existing_cart_item:
+        # Jeśli istnieje, dodaj ilość
+        existing_cart_item.quantity += quantity
+        existing_cart_item.save()
+    else:
+        # Jeśli nie istnieje, utwórz nowy `CartItem` i dodaj go do koszyka
+        cart_item = CartItem.objects.create(medication=medication, quantity=quantity)
+        cart.items.add(cart_item)
 
     return redirect('cart_view')
 
@@ -86,11 +98,15 @@ def add_to_cart(request, medication_id):
 def remove_from_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id)
 
-    if cart_item.quantity > 1:
-        cart_item.quantity -= 1
-        cart_item.save()
-    else:
-        cart_item.delete()
+    # na razie usunelam bo nie wiem czy bedzie dzialac po zmianach
+    #if cart_item.quantity > 1:
+    #    cart_item.quantity -= 1
+    #    cart_item.save()
+    #else:
+    #    cart_item.delete()
+
+
+    cart_item.delete()
 
     return redirect('cart_view')
 
@@ -244,6 +260,7 @@ def realize_prescription(request, prescription_id):
             extended_user.save()
         
         cart = extended_user.prescription_cart
+        cart.items.all().delete()  # usuwa wszystkie cart item jakie byly w koszyku z bazy danych
         cart.items.clear()
 
         # Dodajemy produkty z recepty do koszyka
@@ -252,18 +269,15 @@ def realize_prescription(request, prescription_id):
                 messages.error(request, f"Medication {medication.name} has no price set.")
                 return redirect('prescriptions_view')
 
-            cart_item, created = CartItem.objects.get_or_create(
-                medication=medication, 
-                defaults={'quantity': 1}
+            # Tworzymy nowy CartItem za każdym razem
+            cart_item = CartItem.objects.create(
+                medication=medication,
+                quantity=1
             )
-            if not created:
-                cart_item.quantity += 1
-                cart_item.save()
-
             cart.items.add(cart_item)
 
         # Oznaczamy receptę jako zrealizowaną
-        #prescription.mark_as_realized()
+        # prescription.mark_as_realized()
 
         # Przechowywanie prescription_id w sesji (?)
         request.session['prescription_id'] = prescription.id
@@ -271,6 +285,8 @@ def realize_prescription(request, prescription_id):
         # Obliczamy łączną wartość koszyka
         cart_items = cart.items.all()
         grand_total = sum(item.quantity * item.medication.price for item in cart_items)
+        #cart.items.all().delete()  # usuwa wszystkie cart item jakie byly w koszyku z bazy danych
+        #cart.items.clear()
 
         messages.success(request, "Prescription added to cart successfully. Proceed to checkout.")
         return render(request, 'cart.html', {'cart_items': cart_items, 'grand_total': grand_total})
@@ -279,3 +295,4 @@ def realize_prescription(request, prescription_id):
         # Jeśli recepta jest już zrealizowana
         messages.warning(request, "This prescription has already been realized.")
         return redirect('prescriptions_view')
+
