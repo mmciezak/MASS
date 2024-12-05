@@ -23,6 +23,8 @@ urlpatterns = [
     path('my-account/', views.user_account_view, name='my_account'),
     path('logout/', LogoutView.as_view(), name='logout'),
 
+    path('products/product/<int:medication_id>/', views.product, name='product'),
+
     path('prescriptions/', views.prescriptions_view, name='prescriptions_view'),
     path('add-prescription/', views.add_prescription, name='add_prescription'),
 

@@ -20,6 +20,11 @@ def products(request):
     context = {"medications": medications}
     return render(request, 'products.html', context)
 
+def product(request, medication_id): 
+    medication = get_object_or_404(Medication, id=medication_id)
+    return render(request, 'product.html', {'medication': medication})
+    
+
 def filter_list(request):
     category = request.GET.get('category')
     search = request.GET.get('search')
