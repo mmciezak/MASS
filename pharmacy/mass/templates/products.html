@@ -284,16 +284,15 @@
             <div class="medication-item">
                 <h2><i class="fas fa-capsules" style="color: #319795;"></i> 
                     <a href="{% url 'product' medication.id %}" class="no-underline">{{ medication.name }}</a>
-
                 </h2>
                 <p class="medication-description"><i class="fas fa-info-circle" style="color: #6c757d;"></i> {{ medication.description }}</p>
-                <p><i class="fas fa-exclamation-triangle" style="color: orange;"></i> 
+    
                 {% if medication.image %}
                     <img src="{{ medication.image.url }}" alt="{{ medication.name }}" class="medication-image">
                 {% else %}
                     <p><i class="fas fa-image" style="color: gray;"></i> Brak zdjęcia</p>
                 {% endif %}
-
+    
                 <p class="medication-price">Cena: {{ medication.price }} PLN</p>
                 <form action="{% url 'add_to_cart' medication.id %}" method="POST">
                     {% csrf_token %}
