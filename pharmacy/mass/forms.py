@@ -1,6 +1,11 @@
+import re
+from absl.flags import ValidationError
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+
+from .models import Location
+
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True, help_text="Enter a valid email address.")
@@ -20,6 +25,7 @@ class CustomUserCreationForm(UserCreationForm):
             user.save()
         return user
 
+
 class CheckoutForm(forms.Form):
     first_name = forms.CharField(max_length=50, label="Imię", widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'Wprowadź swoje imię'
@@ -36,12 +42,12 @@ class CheckoutForm(forms.Form):
     zip_code = forms.CharField(max_length=6, label="Kod pocztowy", widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'XX-XXX'
     }))
-    phone = forms.CharField(max_length=10, label="Numer telefonu", widget=forms.TextInput(attrs={
+    phone = forms.CharField(max_length=15, label="Numer telefonu", widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': '+48'
     }))
-    payment = forms.ChoiceField(
-        choices=[('card', 'Karta kredytowa/debetowa'), ('blik', 'Blik')],
-        label="Metoda płatności",
-        widget=forms.RadioSelect
-    )
+    location = forms.ModelChoiceField(queryset=Location.objects.all(),
+                                      label="Wybierz aptekę",
+                                      widget=forms.Select(attrs={'class': 'form-control'})
+                                      )
+
 

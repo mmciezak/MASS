@@ -1,11 +1,9 @@
 from datetime import datetime
-import stripe
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from .forms import CustomUserCreationForm, CheckoutForm
-from django.http import HttpResponse
-from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription
+from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription, Location
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 
@@ -157,7 +155,7 @@ def checkout_view(request, prescription_id=None):
             city = form.cleaned_data['city']
             zip_code = form.cleaned_data['zip_code']
             phone = form.cleaned_data['phone']
-            payment = form.cleaned_data['payment']
+            location = form.cleaned_data['location']
 
             # Tworzenie zamówienia
             order = Order.objects.create(
@@ -165,7 +163,6 @@ def checkout_view(request, prescription_id=None):
                 date_of_order=datetime.now(),
                 shipping_address=f"{address}, {city}, {zip_code}",
                 phone_number=phone,
-                payment_method=payment,
             )
 
             # Przeniesienie elementów z koszyka do zamówienia
