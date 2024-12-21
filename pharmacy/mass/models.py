@@ -32,6 +32,11 @@ class Medication(models.Model):
     def __str__(self):
         return f"{self.name} {self.price}"
 
+class Location(models.Model):
+    address = models.CharField(max_length=255, default="")
+
+    def __str__(self):
+        return f"{self.address}"
 
 # Recepta jest dodawana do systemu a użytkownik dodaje ją do swojego konta dzięki prescription_ID
 class Prescription(models.Model):
@@ -68,7 +73,7 @@ class Order(models.Model):
     phone_number = models.DecimalField(max_digits=20, decimal_places=0)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PAID)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, blank=True)
     def calculate_total(self):
         total = sum(item.subtotal() for item in self.order_items.all())
         return total
@@ -106,10 +111,6 @@ class ExtendedUser(models.Model):
     cart = models.OneToOneField(Cart, on_delete=models.CASCADE, null=True, related_name='user_cart')
     prescription_cart = models.OneToOneField(Cart, on_delete=models.CASCADE, null=True,
                                              related_name='prescription_user_cart')
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
+    is_manager = models.BooleanField(default=False)
 
-
-class Location(models.Model):
-    address = models.CharField(max_length=255, default="")
-
-    def __str__(self):
-        return f"{self.address}"

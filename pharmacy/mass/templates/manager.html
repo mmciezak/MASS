@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Zarządzania</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Panel Zarządzania</h1>
+    </header>
+
+    <main>
+        <!-- Sekcja wyszukiwania recept -->
+        <section>
+            <h2>Wyszukaj receptę</h2>
+            <form method="get">
+                <input type="text" name="search" placeholder="Wprowadź ID recepty" value="{{ request.GET.search|default:'' }}">
+                <button type="submit">Szukaj</button>
+            </form>
+            {% if searched_prescriptions %}
+                <h3>Wyniki wyszukiwania:</h3>
+                <ul>
+                    {% for prescription in searched_prescriptions %}
+                        <li>
+                            <strong>ID:</strong> {{ prescription.prescription_ID }} |
+                            <strong>Pacjent:</strong> {{ prescription.patient_name }} |
+                            <strong>Data:</strong> {{ prescription.date_prescribed }} |
+                            <strong>Zrealizowana:</strong> {{ prescription.realized }}
+                        </li>
+                    {% empty %}
+                        <p>Nie znaleziono pasujących recept.</p>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <!-- Sekcja zamówień -->
+        <section>
+            <h2>Zamówienia dla lokalizacji {{ extended_user.location }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID zamówienia</th>
+                        <th>Użytkownik</th>
+                        <th>Data</th>
+                        <th>Status</th>
+                        <th>Łączna kwota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in all_orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.user.username }}</td>
+                            <td>{{ order.date_of_order }}</td>
+                            <td>{{ order.status }}</td>
+                            <td>{{ order.total }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">Brak zamówień.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Sekcja leków -->
+        <section>
+            <h2>Wszystkie leki</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nazwa</th>
+                        <th>Cena</th>
+                        <th>Stan magazynowy</th>
+                        <th>Kategoria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for medication in medications %}
+                        <tr>
+                            <td>{{ medication.name }}</td>
+                            <td>{{ medication.price }}</td>
+                            <td>{{ medication.stock_quantity }}</td>
+                            <td>{{ medication.get_category_tag_display }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">Brak dostępnych leków.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Sekcja recept -->
+        <section>
+            <h2>Wszystkie recepty</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pacjent</th>
+                        <th>Data</th>
+                        <th>Zrealizowana</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prescription in all_prescriptions %}
+                        <tr>
+                            <td>{{ prescription.prescription_ID }}</td>
+                            <td>{{ prescription.patient_name }}</td>
+                            <td>{{ prescription.date_prescribed }}</td>
+                            <td>{{ prescription.realized }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">Brak recept.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Panel Zarządzania - Wspierane przez MASS</p>
+    </footer>
+</body>
+</html>

@@ -5,7 +5,8 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import CustomUserCreationForm, CheckoutForm
 from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription, Location
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 
 # Widoki
 def index(request):
@@ -45,7 +46,12 @@ def login_page(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('index')
+
+            if hasattr(request.user, 'extendeduser') and request.user.extendeduser.is_manager:
+                return redirect('manager')
+            else:
+                return redirect('index')
+
     context = {"form": form}
     return render(request, 'login.html', context)
 
@@ -312,3 +318,34 @@ def realize_prescription(request, prescription_id):
         messages.warning(request, "This prescription has already been realized.")
         return redirect('prescriptions_view')
 
+def is_manager(user):
+    return user.is_authenticated and hasattr(user, 'extendeduser') and user.extendeduser.is_manager
+
+@user_passes_test(is_manager)
+def pharmacist_view(request):
+    extended_user = get_object_or_404(ExtendedUser, user=request.user)
+    user_location = extended_user.location  # Lokalizacja apteki
+
+    # Pobieramy wszystkie zamówienia z lokalizacji apteki
+    all_orders = Order.objects.filter(location=user_location).order_by('-date_of_order')
+
+    # Pobieramy wszystkie leki dostępne w systemie
+    all_medications = Medication.objects.all()
+
+    # Pobieramy wszystkie recepty w systemie
+    all_prescriptions = Prescription.objects.all()
+
+    # Obsługa wyszukiwania recept
+    search_query = request.GET.get('search', None)
+    searched_prescriptions = None
+    if search_query:
+        searched_prescriptions = Prescription.objects.filter(
+            prescription_ID=search_query
+        )
+
+    return render(request, 'manager.html', {
+        'all_orders': all_orders,
+        'all_prescriptions': all_prescriptions,
+        'medications': all_medications,  # Przekazujemy wszystkie leki w systemie
+        'searched_prescriptions': searched_prescriptions,
+    })

@@ -29,7 +29,7 @@ urlpatterns = [
     path('add-prescription/', views.add_prescription, name='add_prescription'),
 
     path('realize-prescription/<int:prescription_id>/', views.realize_prescription, name='realize_prescription'),
-
+    path('manager/', views.pharmacist_view, name='manager'),
     #path('checkout/', checkout_view, name='checkout_view'),
     #path('checkout/<int:prescription_id>/', checkout_view, name='checkout_view_with_prescription'),
 
