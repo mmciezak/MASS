@@ -6,6 +6,110 @@
     <title>Panel Zarządzania</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        table th, table td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f8f9fa;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 10px);
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            color: #666;
+            border-top: 1px solid #ddd;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        .action-buttons a {
+            text-decoration: none;
+        }
+
+        .action-buttons button {
+            margin-left: 1rem;
+        }
+
+        .order-section, .medication-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -13,32 +117,15 @@
     </header>
 
     <main>
-        <!-- Sekcja wyszukiwania recept -->
-        <section>
-            <h2>Wyszukaj receptę</h2>
-            <form method="get">
-                <input type="text" name="search" placeholder="Wprowadź ID recepty" value="{{ request.GET.search|default:'' }}">
-                <button type="submit">Szukaj</button>
-            </form>
-            {% if searched_prescriptions %}
-                <h3>Wyniki wyszukiwania:</h3>
-                <ul>
-                    {% for prescription in searched_prescriptions %}
-                        <li>
-                            <strong>ID:</strong> {{ prescription.prescription_ID }} |
-                            <strong>Pacjent:</strong> {{ prescription.patient_name }} |
-                            <strong>Data:</strong> {{ prescription.date_prescribed }} |
-                            <strong>Zrealizowana:</strong> {{ prescription.realized }}
-                        </li>
-                    {% empty %}
-                        <p>Nie znaleziono pasujących recept.</p>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </section>
-
+        <!-- Przyciski akcji -->
+        <div class="action-buttons" style="margin-bottom: 1.5rem; text-align: right;">
+            <a href="{% url 'prescriptions_page_manager' %}">
+                <button>Wszystkie Recepty</button>
+            </a>
+        </div>
+    
         <!-- Sekcja zamówień -->
-        <section>
+        <section class="order-section">
             <h2>Zamówienia dla lokalizacji {{ extended_user.location }}</h2>
             <table>
                 <thead>
@@ -48,6 +135,8 @@
                         <th>Data</th>
                         <th>Status</th>
                         <th>Łączna kwota</th>
+                        <th>Data upłynięcia</th>
+                        <th> </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -58,19 +147,26 @@
                             <td>{{ order.date_of_order }}</td>
                             <td>{{ order.status }}</td>
                             <td>{{ order.total }}</td>
+                            <td>{{ order.expiry_date }}</td>
+                            <td> 
+                                <a href="{% url 'order_info' order.id %}">
+                                    <button>Szczegóły</button>
+                                </a>  
+                            </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="5">Brak zamówień.</td>
+                            <td colspan="7">Brak zamówień.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </section>
-
+        
         <!-- Sekcja leków -->
-        <section>
-            <h2>Wszystkie leki</h2>
+        <section class="medication-section">
+            <h2>Stan magazynu</h2>
+            <h3>{{ extended_user.location.address }}</h3>
             <table>
                 <thead>
                     <tr>
@@ -83,10 +179,10 @@
                 <tbody>
                     {% for medication in medications %}
                         <tr>
-                            <td>{{ medication.name }}</td>
-                            <td>{{ medication.price }}</td>
-                            <td>{{ medication.stock_quantity }}</td>
-                            <td>{{ medication.get_category_tag_display }}</td>
+                            <td>{{ medication.medication.name }}</td>
+                            <td>{{ medication.medication.price }}</td>
+                            <td>{{ medication.quantity }}</td>
+                            <td>{{ medication.medication.get_category_tag_display }}</td>
                         </tr>
                     {% empty %}
                         <tr>
@@ -96,36 +192,8 @@
                 </tbody>
             </table>
         </section>
-
-        <!-- Sekcja recept -->
-        <section>
-            <h2>Wszystkie recepty</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Pacjent</th>
-                        <th>Data</th>
-                        <th>Zrealizowana</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for prescription in all_prescriptions %}
-                        <tr>
-                            <td>{{ prescription.prescription_ID }}</td>
-                            <td>{{ prescription.patient_name }}</td>
-                            <td>{{ prescription.date_prescribed }}</td>
-                            <td>{{ prescription.realized }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="4">Brak recept.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
     </main>
+    
 
     <footer>
         <p>Panel Zarządzania - Wspierane przez MASS</p>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wypisz Receptę</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        .messages {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .messages.success {
+            background-color: #d4f1f4;
+            color: #2c7a7b;
+        }
+        .messages.error {
+            background-color: #fdecea;
+            color: #c53030;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Wypisz Receptę</h1>
+        <div class="container mt-4">
+            {% if messages %}
+                <div>
+                    {% for message in messages %}
+                        <div class="messages {{ message.tags }} shadow-sm">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <form action="{% url 'write_out_prescription' %}" method="POST">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="prescription_ID" class="form-label">ID Recepty</label>
+                <input type="number" class="form-control" id="prescription_ID" name="prescription_ID" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="patient_name" class="form-label">Imię i nazwisko pacjenta</label>
+                <input type="text" class="form-control" id="patient_name" name="patient_name" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="date_prescribed" class="form-label">Data wystawienia</label>
+                <input type="date" class="form-control" id="date_prescribed" name="date_prescribed" value="{{ today|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="medications" class="form-label">Leki</label>
+                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#medicationModal">
+                    Dodaj leki
+                </button>
+                <div id="medicationList"></div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="realized" name="realized">
+                <label for="realized" class="form-check-label">Zrealizowano</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="added" name="added">
+                <label for="added" class="form-check-label">Dodano do systemu</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Wypisz receptę</button>
+        </form>
+        <a href="{% url 'doctor' %}" class="btn btn-secondary">Powrót</a>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="medicationModal" tabindex="-1" aria-labelledby="medicationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="medicationModalLabel">Dodaj leki</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="medicationSelect" class="form-label">Leki</label>
+                        <select class="form-select" id="medicationSelect">
+                            {% for medication in medications %}
+                                <option value="{{ medication.id }}" data-name="{{ medication.name }}" data-price="{{ medication.price }}">
+                                    {{ medication.name }} - {{ medication.price }}zł
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="medicationQuantity" class="form-label">Ilość</label>
+                        <input type="number" class="form-control" id="medicationQuantity" min="1" value="1">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="addMedication">Dodaj lek</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const addMedicationButton = document.getElementById("addMedication");
+            const medicationSelect = document.getElementById("medicationSelect");
+            const medicationQuantity = document.getElementById("medicationQuantity");
+            const medicationList = document.getElementById("medicationList");
+
+            addMedicationButton.addEventListener("click", function() {
+                const selectedOption = medicationSelect.options[medicationSelect.selectedIndex];
+                const medicationId = selectedOption.value;
+                const medicationName = selectedOption.getAttribute("data-name");
+                const medicationPrice = selectedOption.getAttribute("data-price");
+                const quantity = medicationQuantity.value;
+
+                const medicationItem = document.createElement("div");
+                medicationItem.classList.add("medication-item");
+                medicationItem.innerHTML = `
+                    <input type="hidden" name="medications" value="${medicationId}" />
+                    <input type="hidden" name="quantities" value="${quantity}" />
+                    ${medicationName} - ${medicationPrice}zł (Ilość: ${quantity})
+                    <button type="button" class="btn btn-danger btn-sm remove-medication">Usuń</button>
+                `;
+
+                medicationList.appendChild(medicationItem);
+
+                const removeButtons = document.querySelectorAll(".remove-medication");
+                removeButtons.forEach(button => {
+                    button.addEventListener("click", function() {
+                        this.parentElement.remove();
+                    });
+                });
+
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('medicationModal'));
+                modal.hide();
+            });
+        });
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

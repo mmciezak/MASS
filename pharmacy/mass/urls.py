@@ -19,6 +19,9 @@ urlpatterns = [
     path('cart/checkout', views.checkout_view, name='checkout_view'),
     path('cart/checkout/<int:prescription_id>/', views.checkout_view, name='checkout_view_with_prescription'),
 
+    #test
+    path('check-availability/', views.check_availability, name='check_availability'),
+
     path('order-success/<int:order_id>/', views.order_success, name='order_success'),
     path('my-account/', views.user_account_view, name='my_account'),
     path('logout/', LogoutView.as_view(), name='logout'),
@@ -29,8 +32,20 @@ urlpatterns = [
     path('add-prescription/', views.add_prescription, name='add_prescription'),
 
     path('realize-prescription/<int:prescription_id>/', views.realize_prescription, name='realize_prescription'),
+
     path('manager/', views.pharmacist_view, name='manager'),
+    path('doctor/', views.doctor_view, name='doctor'),
+
+
     #path('checkout/', checkout_view, name='checkout_view'),
     #path('checkout/<int:prescription_id>/', checkout_view, name='checkout_view_with_prescription'),
+
+    path('write_out_prescription/', views.write_out_prescription, name='write_out_prescription'),
+    path('write_out_prescription/success/', views.prescription_success, name='prescription_success'),
+
+    path('manager/order_info/<int:order_id>', views.order_info, name='order_info'),
+    path('manager/order_info/<int:order_id>/receive', views.mark_as_received, name='mark_as_received'),
+    path('manager/prescriptions', views.prescriptions_page_manager, name='prescriptions_page_manager'),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

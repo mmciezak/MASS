@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from .forms import CustomUserCreationForm, CheckoutForm
-from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription, Location
+from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription, Location, MedicationStock
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 
@@ -49,6 +49,8 @@ def login_page(request):
 
             if hasattr(request.user, 'extendeduser') and request.user.extendeduser.is_manager:
                 return redirect('manager')
+            elif hasattr(request.user, 'extendeduser') and request.user.extendeduser.is_doctor:
+                return redirect('doctor')
             else:
                 return redirect('index')
 
@@ -144,12 +146,14 @@ def cart_view(request):
     return render(request, 'cart.html', {'cart_items': cart_items, 'grand_total': grand_total})
 
 def checkout_view(request, prescription_id=None):
+    locations = Location.objects.all()
     form = CheckoutForm()
     order = None
     user = ExtendedUser.objects.get(user=request.user)
     cart = user.cart
     cart_items = cart.items.all()
     grand_total = sum(item.quantity * item.medication.price for item in cart_items)
+
 
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
@@ -169,6 +173,7 @@ def checkout_view(request, prescription_id=None):
                 date_of_order=datetime.now(),
                 shipping_address=f"{address}, {city}, {zip_code}",
                 phone_number=phone,
+                location=Location.objects.get(address=location),
             )
 
             # Przeniesienie elementów z koszyka do zamówienia
@@ -205,6 +210,8 @@ def checkout_view(request, prescription_id=None):
         'form': form,
         'order': order,
         'grand_total': grand_total,
+        'cart_items': cart_items,
+        'locations': locations,  # Przekazanie listy aptek
     })
 
 
@@ -286,7 +293,12 @@ def realize_prescription(request, prescription_id):
         cart.items.clear()
 
         # Dodajemy produkty z recepty do koszyka
-        for medication in prescription.medications.all():
+        for index, medication in enumerate(prescription.medications.all()):#pobieramy indeks leku i lek
+
+            quantity = 1
+            if prescription.quantities:
+                quantity = prescription.quantities[index]
+
             if medication.price is None:
                 messages.error(request, f"Medication {medication.name} has no price set.")
                 return redirect('prescriptions_view')
@@ -294,7 +306,7 @@ def realize_prescription(request, prescription_id):
             # Tworzymy nowy CartItem za każdym razem
             cart_item = CartItem.objects.create(
                 medication=medication,
-                quantity=1
+                quantity=quantity
             )
             cart.items.add(cart_item)
 
@@ -321,6 +333,9 @@ def realize_prescription(request, prescription_id):
 def is_manager(user):
     return user.is_authenticated and hasattr(user, 'extendeduser') and user.extendeduser.is_manager
 
+def is_doctor(user):
+    return user.is_authenticated and hasattr(user, 'extendeduser') and user.extendeduser.is_doctor
+
 @user_passes_test(is_manager)
 def pharmacist_view(request):
     extended_user = get_object_or_404(ExtendedUser, user=request.user)
@@ -328,9 +343,14 @@ def pharmacist_view(request):
 
     # Pobieramy wszystkie zamówienia z lokalizacji apteki
     all_orders = Order.objects.filter(location=user_location).order_by('-date_of_order')
+    for order in all_orders:
+        order.set_status()
 
     # Pobieramy wszystkie leki dostępne w systemie
-    all_medications = Medication.objects.all()
+    #all_medications = Medication.objects.all()
+
+    # pobieramy leki dostepne w danej aptece
+    medications = MedicationStock.objects.filter(location=user_location)
 
     # Pobieramy wszystkie recepty w systemie
     all_prescriptions = Prescription.objects.all()
@@ -346,6 +366,157 @@ def pharmacist_view(request):
     return render(request, 'manager.html', {
         'all_orders': all_orders,
         'all_prescriptions': all_prescriptions,
-        'medications': all_medications,  # Przekazujemy wszystkie leki w systemie
+        'medications': medications,  # Przekazujemy wszystkie leki w systemie
         'searched_prescriptions': searched_prescriptions,
+        'extended_user' : extended_user
     })
+
+@user_passes_test(is_doctor)
+def doctor_view(request):
+    extended_user = get_object_or_404(ExtendedUser, user=request.user)
+    user_location = extended_user.location  # Lokalizacja apteki
+
+    # Pobieramy wszystkie zamówienia z lokalizacji apteki
+    all_orders = Order.objects.filter(location=user_location).order_by('-date_of_order')
+
+    # Pobieramy wszystkie leki dostępne w systemie
+    all_medications = Medication.objects.all()
+
+    # Pobieramy wszystkie recepty w systemie
+    #all_prescriptions = Prescription.objects.all()
+
+    # Obsługa wyszukiwania recept
+    #search_query = request.GET.get('search', None)
+    #searched_prescriptions = None
+    #if search_query:
+    #    searched_prescriptions = Prescription.objects.filter(
+    #        prescription_ID=search_query
+    #    )
+
+    return render(request, 'doctor.html', {
+        #'all_orders': all_orders,
+        #'all_prescriptions': all_prescriptions,
+        'medications': all_medications,  # Przekazujemy wszystkie leki w systemie
+        #'searched_prescriptions': searched_prescriptions,
+    })
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
+from .models import Medication, Prescription
+from django.utils.timezone import now
+import json
+
+@user_passes_test(is_doctor)
+def write_out_prescription(request):
+    if request.method == "POST":
+        prescription_ID = request.POST.get("prescription_ID")
+        patient_name = request.POST.get("patient_name")
+        date_prescribed = request.POST.get("date_prescribed", now().date())
+        medications_ids = request.POST.getlist("medications")
+        quantities = request.POST.getlist("quantities")
+        realized = request.POST.get("realized") == "on"
+        added = request.POST.get("added") == "on"
+
+        if Prescription.objects.filter(prescription_ID=prescription_ID).exists():
+            messages.error(request, "Recepta o podanym ID już istnieje.")
+            medications = Medication.objects.all()
+            context = {
+                "medications": medications,
+                "today": now().date()
+            }
+            return render(request, 'add_prescription.html', context)
+
+        prescription = Prescription(
+            prescription_ID=prescription_ID,
+            patient_name=patient_name,
+            date_prescribed=date_prescribed,
+            realized=realized,
+            added=added
+        )
+        prescription.save()
+
+        medications = Medication.objects.filter(id__in=medications_ids)
+        prescription.medications.set(medications)
+
+        # Convert quantities list to integers
+        quantities = [int(qty) for qty in quantities]
+        prescription.quantities = quantities
+        prescription.save()
+
+        return redirect("/write_out_prescription/success/")
+
+    medications = Medication.objects.all()
+    context = {
+        "medications": medications,
+        "today": now().date()
+    }
+    return render(request, 'add_prescription.html', context)
+
+
+@user_passes_test(is_doctor)
+def prescription_success(request):
+    return render(request, 'success_prescription.html', {
+        "message": "Recepta została pomyślnie zapisana."
+    })
+
+
+@user_passes_test(is_manager)
+def order_info(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'order_info.html', {'order' : order})
+
+@user_passes_test(is_manager)
+def mark_as_received(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    if order.status != Order.Status.EXPIRED:
+        order.receive_order()
+        order.save()
+    return redirect('order_info', order_id=order.id)
+
+
+@user_passes_test(is_manager)
+def prescriptions_page_manager(request):
+    search_query = request.GET.get('search', '')
+    searched_prescriptions = []
+    if search_query:
+        searched_prescriptions = Prescription.objects.filter(prescription_ID__icontains=search_query)
+
+    all_prescriptions = Prescription.objects.all()
+    context = {
+        'searched_prescriptions': searched_prescriptions,
+        'all_prescriptions': all_prescriptions,
+    }
+    return render(request, 'prescriptions_page_manager.html', context)
+
+
+
+
+
+#test
+
+from django.http import JsonResponse
+
+def check_availability(request):
+    if request.method == 'GET':
+        location_id = request.GET.get('location_id')
+        user = ExtendedUser.objects.get(user=request.user)
+        cart_items = user.cart.items.all()
+
+        if not location_id:
+            return JsonResponse({'status': 'error', 'message': 'Location not selected.'})
+
+        try:
+            location = Location.objects.get(id=location_id)
+        except Location.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Invalid location.'})
+
+        availability = {}
+        for item in cart_items:
+            stock = MedicationStock.objects.filter(location=location, medication=item.medication).first()
+            if stock and stock.quantity - stock.reserved >= item.quantity:
+                availability[item.medication.name] = "Dostępne"
+            else:
+                availability[item.medication.name] = "Niedostępne"
+
+        return JsonResponse({'status': 'success', 'availability': availability})

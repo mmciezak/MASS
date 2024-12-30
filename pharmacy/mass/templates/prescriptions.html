@@ -1,3 +1,4 @@
+{% load get_item %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -139,34 +140,45 @@
             </div>
         {% endif %}
 
+
         {% if prescriptions.exists %}
-            {% for prescription in prescriptions %}
-            <div class="prescription">
-                <h2>Recepta ID: {{ prescription.prescription_ID }}</h2>
-                <p>Imię i nazwisko pacjenta: {{ prescription.patient_name }}</p>
-                <p>Data wystawienia: {{ prescription.date_prescribed }}</p>
-                <p>Leki:</p>
-                <ul>
-                    {% for medication in prescription.medications.all %}
-                    <li>{{ medication.name }}</li>
-                    {% endfor %}
-                </ul>
-                <p>Status: 
-                    {% if prescription.realized %}
-                        <span class="realized-status">Zrealizowana</span>
-                    {% else %}
-                        <span class="not-realized-status">Niezrealizowana</span>
-                        <form action="{% url 'realize_prescription' prescription.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-primary">Zrealizuj</button>
-                        </form>
-                    {% endif %}
-                </p>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p>Brak dodanych recept.</p>
-        {% endif %}
+    {% for prescription in prescriptions %}
+        <div class="prescription">
+            <h2>Recepta ID: {{ prescription.prescription_ID }}</h2>
+            <p>Imię i nazwisko pacjenta: {{ prescription.patient_name }}</p>
+            <p>Data wystawienia: {{ prescription.date_prescribed }}</p>
+            <p>Leki:</p>
+            <ul>
+                {% for medication in prescription.medications.all %}
+                    <li>
+                        {{ medication.name }} - 
+                        {% if prescription.quantities %}
+                            {% with quantity=prescription.quantities|get_item:forloop.counter0 %}
+                                Ilość: {{ quantity }}
+                            {% endwith %}
+                        {% else %}
+                            Ilość: N/A
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <p>Status: 
+                {% if prescription.realized %}
+                    <span class="realized-status">Zrealizowana</span>
+                {% else %}
+                    <span class="not-realized-status">Niezrealizowana</span>
+                    <form action="{% url 'realize_prescription' prescription.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-primary">Zrealizuj</button>
+                    </form>
+                {% endif %}
+            </p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>Brak dodanych recept.</p>
+{% endif %}
+
 
         <div class="add-prescription">
             <h2>Dodaj nową receptę</h2>

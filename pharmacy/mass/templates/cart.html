@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -135,17 +136,17 @@
         </thead>
         <tbody>
             {% for item in cart_items %}
-            <tr>
-                <td>{{ item.medication.name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.medication.price }} PLN</td>
-                <td>
-                    <form action="{% url 'remove_from_cart' item.id %}" method="POST">
-                        {% csrf_token %}
-                        <button type="submit" class="remove-button" onclick="return confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')">Usuń</button>
-                    </form>
-                </td>
-            </tr>
+                <tr>
+                    <td>{{ item.medication.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.medication.price|multiply:item.quantity }} PLN</td>  <!-- Całkowita cena -->
+                    <td>
+                        <form action="{% url 'remove_from_cart' item.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="remove-button" onclick="return confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

@@ -108,6 +108,11 @@
         <!-- Price Summary -->
         <div class="price-container">
             <h3>Podsumowanie</h3>
+            <div class="product-list"> {% for item in cart_items %} 
+                <div class="product-item"> 
+                    <p>{{ item.medication.name }} - {{ item.quantity }} x {{ item.medication.price }} PLN </p>
+
+                </div> {% endfor %} </div>
             <p><strong>Całkowita cena:</strong> <span id="total-price">{{ grand_total }}</span> PLN</p>
         </div>
 
@@ -116,13 +121,116 @@
             <h2>Wprowadź dane</h2>
             <form method="POST">
                 {% csrf_token %}
-                {{ form.as_p }}
+        
+                <div class="form-group">
+                    <label for="id_first_name">Imię</label>
+                    <input type="text" id="id_first_name" name="first_name" class="form-control" placeholder="Wprowadź swoje imię" value="{{ form.first_name.value|default:'' }}">
+                    {% if form.first_name.errors %}
+                        <ul class="error-list">
+                            {% for error in form.first_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+        
+                <div class="form-group">
+                    <label for="id_last_name">Nazwisko</label>
+                    <input type="text" id="id_last_name" name="last_name" class="form-control" placeholder="Wprowadź swoje nazwisko" value="{{ form.last_name.value|default:'' }}">
+                    {% if form.last_name.errors %}
+                        <ul class="error-list">
+                            {% for error in form.last_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+        
+                <div class="form-group">
+                    <label for="id_address">Adres</label>
+                    <input type="text" id="id_address" name="address" class="form-control" placeholder="Wprowadź swój adres do wysyłki" value="{{ form.address.value|default:'' }}">
+                    {% if form.address.errors %}
+                        <ul class="error-list">
+                            {% for error in form.address.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+        
+                <div class="form-group">
+                    <label for="id_city">Miasto</label>
+                    <input type="text" id="id_city" name="city" class="form-control" placeholder="Miasto" value="{{ form.city.value|default:'' }}">
+                    {% if form.city.errors %}
+                        <ul class="error-list">
+                            {% for error in form.city.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+        
+                <div class="form-group">
+                    <label for="id_zip_code">Kod pocztowy</label>
+                    <input type="text" id="id_zip_code" name="zip_code" class="form-control" placeholder="XX-XXX" value="{{ form.zip_code.value|default:'' }}">
+                    {% if form.zip_code.errors %}
+                        <ul class="error-list">
+                            {% for error in form.zip_code.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+        
+                <div class="form-group">
+                    <label for="id_phone">Numer telefonu</label>
+                    <input type="text" id="id_phone" name="phone" class="form-control" placeholder="+48" value="{{ form.phone.value|default:'' }}">
+                    {% if form.phone.errors %}
+                        <ul class="error-list">
+                            {% for error in form.phone.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+        
+                <div class="form-group">
+                    <label for="id_location">Wybierz aptekę</label>
+                    <!--<select id="id_location" name="location" class="form-control">
+                        {% for location in form.location.field.queryset %}
+                            <option value="{{ location.id }}" {% if location.id == form.location.value %}selected{% endif %}>
+                                {{ location }}
+                            </option>
+                        {% endfor %}
+                    </select>-->
+                    <select id="id_location" name="location" class="form-control" required>
+                        <option value="" disabled selected>Wybierz aptekę</option>
+                        {% for location in form.location.field.queryset %}
+                            <option value="{{ location.id }}" {% if location.id == form.location.value %}selected{% endif %}>
+                                {{ location }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.location.errors %}
+                        <ul class="error-list">
+                            {% for error in form.location.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                <div id="availability-status" style="margin-top: 20px;">
+                    <!-- wyniki dostepnosci -->
+                </div>
+        
                 <button type="submit">Zamów</button>
             </form>
+        
             <a href="{% url 'cart_view' %}">
                 <button class="back-button">Wróć do koszyka</button>
             </a>
         </div>
+        
     </div>
 
     <!-- Dynamic Price Calculation -->
@@ -134,6 +242,41 @@
            
             totalPriceElement.textContent = totalPrice.toFixed(2);
         });
+
+        //sprawdzanie dostepnosci towaru
+        const locationSelect = document.getElementById('id_location');
+        const availabilityDiv = document.createElement('div');
+        locationSelect.parentElement.appendChild(availabilityDiv);
+    
+        locationSelect.addEventListener('change', function () {
+            const locationId = this.value;
+    
+            if (locationId) {
+                fetch(`/check-availability/?location_id=${locationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        availabilityDiv.innerHTML = '';
+                        if (data.status === 'success') {
+                            const availabilityList = document.createElement('ul');
+                            for (const [medication, status] of Object.entries(data.availability)) {
+                                const listItem = document.createElement('li');
+                                listItem.textContent = `${medication}: ${status}`;
+                                availabilityList.appendChild(listItem);
+                            }
+                            availabilityDiv.appendChild(availabilityList);
+                        } else {
+                            availabilityDiv.textContent = data.message;
+                        }
+                    })
+                    .catch(error => {
+                        availabilityDiv.textContent = "Błąd w sprawdzaniu dostępności.";
+                    });
+            } else {
+                availabilityDiv.innerHTML = '';
+            }
+        });
     </script>
+
+    
 </body>
 </html>
