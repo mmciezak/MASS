@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista Recept</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #2c7a7b;
+            color: #fff;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #38b2ac;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        table th, table td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f8f9fa;
+            color: #2c7a7b;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 10px);
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            background-color: rgba(255, 0, 0, 0.51); 
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: rgb(142, 63, 63);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #2c7a7b;
+            color: #ffff;
+            border-top: 1px solid #ddd;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+       
+button[type="submit"] {
+    margin-top: 1rem; 
+}
+
+
+        .back-button {
+            margin-top: 1rem;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Lista Recept</h1>
+    </header>
+
+    <main>
+        <!-- Sekcja wyszukiwania recept -->
+        <section>
+            <h2>Wyszukaj Receptę</h2>
+            <form method="get">
+                <input type="text" name="search" placeholder="Wprowadź ID recepty" value="{{ request.GET.search|default:'' }}">
+                <button type="submit">Szukaj</button>
+            </form>
+        </section>
+
+        <!-- Sekcja wyników -->
+        <section>
+            <h2>Wyniki wyszukiwania</h2>
+            {% if searched_prescriptions %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Pacjent</th>
+                            <th>Data</th>
+                            <th>Zrealizowana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescription in searched_prescriptions %}
+                            <tr>
+                                <td>{{ prescription.prescription_ID }}</td>
+                                <td>{{ prescription.patient_name }}</td>
+                                <td>{{ prescription.date_prescribed }}</td>
+                                <td>{{ prescription.realized }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4">Nie znaleziono pasujących recept.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Wprowadź ID recepty, aby rozpocząć wyszukiwanie.</p>
+            {% endif %}
+        </section>
+
+        <!-- Wszystkie recepty -->
+        <section>
+            <h2>Wszystkie Recepty</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pacjent</th>
+                        <th>Data</th>
+                        <th>Zrealizowana</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prescription in all_prescriptions %}
+                        <tr>
+                            <td>{{ prescription.prescription_ID }}</td>
+                            <td>{{ prescription.patient_name }}</td>
+                            <td>{{ prescription.date_prescribed }}</td>
+                            <td>{{ prescription.realized }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">Brak recept.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Przycisk powrotu -->
+        <div class="back-button">
+            <a href="{% url 'manager' %}">
+                <button>Powrót do Panelu Zarządzania</button>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>Lista Recept - Wspierane przez MASS</p>
+    </footer>
+</body>
+</html>

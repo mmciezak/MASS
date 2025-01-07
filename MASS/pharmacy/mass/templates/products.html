@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0px 20px;
+        }
+
+
+        .search-section {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+
+        .search-section form {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .search-section label {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .search-section select,
+        .search-section input[type="text"] {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-section select:focus,
+        .search-section input[type="text"]:focus {
+            border-color: #2c7a7b;
+        }
+
+        .search-section button {
+            background: linear-gradient(to right, #2c7a7b, #319795);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .search-section button:hover {
+            background: linear-gradient(to right, #319795, #2c7a7b);
+            transform: scale(1.05);
+        }
+
+        .container-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .medication-item {
+            background-color: #ffffff;
+            border: 2px solid #d1e7e7;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        .medication-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .medication-description {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .medication-image {
+            max-height: 100px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .medication-price {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .add-to-cart {
+            background: linear-gradient(to right, #2c7a7b, #319795);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .add-to-cart:hover {
+            background: linear-gradient(to right, #319795, #2c7a7b);
+            transform: scale(1.02);
+        }
+        
+        .no-underline {
+            text-decoration: none; 
+            color: inherit; 
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="search-section">
+        <form method="GET" action="{% url 'products' %}">
+            <label for="category">Filtruj:</label>
+            <select name="category" id="category">
+                <option value="">Wszystkie</option>
+                {% for key, label in categories %}
+                    <option value="{{ key }}" {% if request.GET.category == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="search">Wyszukaj:</label>
+            <input type="text" name="search" id="search" value="{{ request.GET.search }}" placeholder="Wpisz nazwę leku...">
+
+            <button type="submit">Zastosuj</button>
+        </form>
+    </div>
+
+    <div class="container-row">
+        {% for medication in medications %}
+            <div class="medication-item">
+                <h2><i class="fas fa-capsules" style="color: #319795;"></i> 
+                    <a href="{% url 'product' medication.id %}" class="no-underline">{{ medication.name }}</a>
+                </h2>
+                <p class="medication-description"><i class="fas fa-info-circle" style="color: #6c757d;"></i> {{ medication.description }}</p>
+
+                {% if medication.image %}
+                    <img src="{{ medication.image.url }}" alt="{{ medication.name }}" class="medication-image">
+                {% else %}
+                    <p><i class="fas fa-image" style="color: gray;"></i> Brak zdjęcia</p>
+                {% endif %}
+
+                <p class="medication-price">Cena: {{ medication.price }} PLN</p>
+                <form action="{% url 'add_to_cart' medication.id %}" method="POST">
+                    {% csrf_token %}
+                    <label for="quantity"><i class="fas fa-sort-numeric-up"></i> Ilość:</label>
+                    <input type="number" name="quantity" min="1" value="1">
+                    <button class="add-to-cart" type="submit">Dodaj do koszyka</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div>
+        <a href="{% url 'index' %}">
+            <button>Wróć</button>
+        </a>
+    </div>    
+</body>
+</html>

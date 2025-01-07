@@ -1,0 +1,172 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twój Koszyk</title>
+    {% load static %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0px 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #38b2ac;
+            color: white;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        td {
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 15px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .remove-button {
+            background-color: #e53e3e;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .remove-button:hover {
+            background-color: #c53030;
+            transform: scale(1.05);
+        }
+
+        .button-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button-container a button {
+            background-color: #3182ce;
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container a button:hover {
+            background-color: #2b6cb0;
+            transform: translateY(-2px);
+        }
+
+        .total {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3748;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .button-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .button-container a button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h2>Twój Koszyk</h2>
+
+    {% if cart_items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Ilość</th>
+                <th>Cena</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+                <tr>
+                    <td>{{ item.medication.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.medication.price|multiply:item.quantity }} PLN</td>  <!-- Całkowita cena -->
+                    <td>
+                        <form action="{% url 'remove_from_cart' item.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="remove-button" onclick="return confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="total">Łączna kwota: {{ grand_total }} PLN</p>
+
+    <div class="button-container">
+        <a href="{% url 'products' %}"><button>Przeglądaj produkty</button></a>
+        <a href="{% url 'checkout_view' %}"><button>Zarezerwuj</button></a>
+        <a href="javascript:history.back()"><button>Wróć</button></a>
+    </div>
+    {% else %}
+    <p style="text-align: center; font-size: 16px;">Twój koszyk jest pusty.</p>
+    <div class="button-container">
+        <a href="{% url 'products' %}"><button>Przeglądaj produkty</button></a>
+    </div>
+    {% endif %}
+</body>
+</html>
