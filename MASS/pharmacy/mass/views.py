@@ -147,16 +147,20 @@ def cart_view(request):
     extended_user = get_object_or_404(ExtendedUser, user=request.user)
     cart = extended_user.cart
     cart_items = cart.items.all()
-    
+    request.session['prescription_id'] = None
     grand_total = sum(item.quantity * item.medication.price for item in cart_items)
     return render(request, 'cart.html', {'cart_items': cart_items, 'grand_total': grand_total})
 
 def checkout_view(request, prescription_id=None):
+    prescription_id = request.session.get('prescription_id', None)
     locations = Location.objects.all()
     form = CheckoutForm()
     order = None
     user = ExtendedUser.objects.get(user=request.user)
-    cart = user.cart
+    if prescription_id:
+        cart = user.prescription_cart
+    else:
+        cart = user.cart
     cart_items = cart.items.all()
     grand_total = sum(item.quantity * item.medication.price for item in cart_items)
 
