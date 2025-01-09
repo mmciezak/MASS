@@ -15,6 +15,7 @@ urlpatterns = [
     path('add_to_cart/<int:medication_id>/', views.add_to_cart, name='add_to_cart'),
     path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
 
+    path('cart/remove_single/<int:item_id>/', views.remove_single_item, name='remove_single_item'),
     path('cart/', views.cart_view, name='cart_view'),
     path('cart/checkout', views.checkout_view, name='checkout_view'),
     path('cart/checkout/<int:prescription_id>/', views.checkout_view, name='checkout_view_with_prescription'),

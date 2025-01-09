@@ -3,7 +3,7 @@ from django import forms
 from .models import Symptom
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-
+from django.contrib.auth.password_validation import validate_password
 from .models import Location
 
 
@@ -11,6 +11,13 @@ class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True, help_text="Enter a valid email address.")
     first_name = forms.CharField(max_length=30, required=True, help_text="Enter your first name.")
     last_name = forms.CharField(max_length=30, required=True, help_text="Enter your last name.")
+    password1 = forms.CharField(
+        label= "Hasło",
+        widget= forms.PasswordInput,
+        validators= [validate_password],
+        help_text= "Hasło musi zawierać co najmniej 8 znaków i składać się z liter, cyfr lub znaków specjalnych."
+    )
+    password2 = forms.CharField(label="Potwierdź hasło", widget= forms.PasswordInput)
 
     class Meta:
         model = User
