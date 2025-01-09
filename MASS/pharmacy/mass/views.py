@@ -7,7 +7,6 @@ from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import SymptomForm
-import stripe
 import re
 
 
@@ -426,6 +425,7 @@ def write_out_prescription(request):
 
         if Prescription.objects.filter(prescription_ID=prescription_ID).exists():
             messages.error(request, "Recepta o podanym ID już istnieje.")
+            return redirect('add_prescription')
             medications = Medication.objects.all()
             context = {
                 "medications": medications,
