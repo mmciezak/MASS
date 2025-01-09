@@ -145,9 +145,14 @@
                     <td>{{ item.quantity }}</td>
                     <td>{{ item.medication.price|multiply:item.quantity }} PLN</td>  <!-- Całkowita cena -->
                     <td>
-                        <form action="{% url 'remove_from_cart' item.id %}" method="POST">
+                        <form action="{% url 'remove_single_item' item.id %}" method="POST" style="display: inline-block;">
                             {% csrf_token %}
-                            <button type="submit" class="remove-button" onclick="return confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')">Usuń</button>
+                            <button type="submit" class="remove-button" style="background-color: #f6ad55;" 
+                                    onclick="return confirm('Czy na pewno chcesz usunąć 1 sztukę tego produktu?')">Usuń 1 szt.</button>
+                        </form>
+                        <form action="{% url 'remove_from_cart' item.id %}" method="POST" style="display: inline-block;">
+                            {% csrf_token %}
+                            <button type="submit" class="remove-button" onclick="return confirm('Czy na pewno chcesz usunąć cały produkt z koszyka?')">Usuń wszystko</button>
                         </form>
                     </td>
                 </tr>

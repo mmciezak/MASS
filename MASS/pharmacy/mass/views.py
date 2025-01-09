@@ -8,9 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import SymptomForm
 import re
-
-
-
+import unidecode
 
 # Widoki
 def index(request):
@@ -58,6 +56,7 @@ def login_page(request):
             else:
                 return redirect('index')
         else:
+            messages.error(request, "Niepoprawna nazwa użytkownika lub hasło.")
             return redirect('loginPage')
     context = {"form": form}
     return render(request, 'login.html', context)
@@ -77,6 +76,10 @@ def register_page(request):
 
             login(request, user)  
             return redirect('index')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
     else:
         form = CustomUserCreationForm()
     context = {"form": form}
@@ -128,17 +131,23 @@ def add_to_cart(request, medication_id):
 def remove_from_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id)
 
-    # na razie usunelam bo nie wiem czy bedzie dzialac po zmianach
-    #if cart_item.quantity > 1:
-    #    cart_item.quantity -= 1
-    #    cart_item.save()
-    #else:
-    #    cart_item.delete()
-
-
     cart_item.delete()
 
     return redirect('cart_view')
+
+@login_required
+def remove_single_item(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    
+    if cart_item.quantity > 1:
+        # Zmniejszenie ilości o 1
+        cart_item.quantity -= 1
+        cart_item.save()
+    else:
+        # Usunięcie, jeśli to ostatnia sztuka
+        cart_item.delete()
+
+    return redirect('cart_view')  # Przekierowanie na stronę koszyka
 
 # Widok koszyka
 @login_required
@@ -560,23 +569,37 @@ SYMPTOM_ADVICE = {
     }
 }
 
+def remove_polish_chars(text):
+    """Zamienia polskie znaki na ich odpowiedniki bez ogonków."""
+    return unidecode.unidecode(text)
+
 # Funkcja dopasowująca symptomy
 def match_symptom(user_input):
     synonyms = {
-    "ból głowy": ["ból głowy", "bóle głowy", "mam bóle w głowie", "głowa boli"],
-    "kaszel": ["mam kaszel", "kaszlę", "mam ataki kaszlu", "mam problemy z kaszlem"],
-    "ból brzucha": ["ból brzucha", "bóle brzucha", "mam bóle w brzuchu", "boli mnie brzuch", "mam problemy z brzuchem"],
-    "gorączka": ["gorączka", "mam gorączkę", "czuję się gorący", "mam wysoką temperaturę"],
-    "katar": ["katar", "mam katar", "cieknie mi z nosa", "nos mi cieknie", "mam zatkany nos"],
-    "ból stawów": ["ból stawów", "bóle stawów", "bolą mnie stawy", "mam problemy ze stawami"],
-    "witaminy": ["witaminy", "brak witamin", "potrzebuję witamin", "zalecane witaminy", "suplementacja witamin"]
-}
+        "ból głowy": ["ból głowy", "głowa", "migrena", "bole w glowie", "boli mnie glowa"],
+        "kaszel": ["kaszel", "kaszlę", "kaszle", "mam ataki kaszlu"],
+        "ból brzucha": ["brzuch", "bol brzucha", "bóle brzucha", "boli mnie brzuch", "boli brzuch"],
+        "gorączka": ["gorączka", "temperatura", "mam temperature", "goraczka"],
+        "katar": ["katar", "cieknie mi z nosa", "zatkany nos", "cieknie"],
+        "ból stawów": ["stawy", "bolą mnie stawy", "bóle stawów"],
+        "witaminy": ["witaminy", "suplementacja", "brak witamin"],
+    }
 
-    for symptom, variations in synonyms.items():
-        for variation in variations:
-            if re.search(rf"\b{variation}\b", user_input, re.IGNORECASE):
-                return symptom, SYMPTOM_ADVICE[symptom]
-    return None, None
+    # Usuwanie polskich znaków
+    user_input = remove_polish_chars(user_input.lower())
+
+    # Rozbijanie tekstu na słowa
+    tokens = re.findall(r'\b\w+\b', user_input)
+
+    # Sprawdzanie dopasowania
+    for symptom, keywords in synonyms.items():
+        for keyword in keywords:
+            keyword_clean = remove_polish_chars(keyword.lower())
+            if any(keyword_clean in token for token in tokens):
+                return symptom, SYMPTOM_ADVICE.get(symptom, "Brak szczegółowych porad.")
+    
+    return None, "Nie znaleziono pasujących objawów."
+
 
 def symptom_advice_view(request):
     if request.method == "POST":
