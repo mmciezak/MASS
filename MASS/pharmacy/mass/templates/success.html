@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potwierdzenie Zamówienia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    {% load static %}
+    <style>
+        
+        
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-size: cover;
+            background: linear-gradient(135deg, #38b2ac, #319795);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0px 20px;
+            height: 100%;
+            text-align: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            width: 450px;
+            padding: 40px 30px;
+            position: relative;
+            margin-top: 80px;
+        }
+        .container h1 {
+            font-size: 26px;
+            margin-bottom: 20px;
+            color: #38b2ac;
+        }
+        .container p {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .container .order-details {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .container .order-details p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .container a {
+            display: inline-block;
+            text-decoration: none;
+            color: #fff;
+            background: #38b2ac;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .container a:hover {
+            background: #2c7a7b;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 600px) {
+            .container h1 {
+                font-size: 22px;
+            }
+            .container p {
+                font-size: 14px;
+            }
+            .container a {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+{% include 'navbar.html' %}
+    <div class="container">
+        <h1>🎉 Zamówienie złożone pomyślnie!</h1>
+        <p>Dziękujemy za zakupy w naszym sklepie!</p>
+        <p>Powiadomimy cię, gdy zamówienie będzie gotowe w wybranym punkcie.</p>
+        <a href="{% url 'products' %}">🏠 Powrót na stronę główną</a>
+    </div>
+</body>
+</html>

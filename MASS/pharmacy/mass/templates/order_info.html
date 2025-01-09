@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zamówienie {{ order.id }}</title>
+    {% load static %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background: url("{% static 'tlo/tloMass.jpg'%}");
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c7a7b;
+        }
+        .details {
+            margin-bottom: 20px;
+        }
+        .details p {
+            margin: 5px 0;
+            color: #555;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            color: #fff;
+            text-decoration: none;
+            background: #38b2ac;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .button:hover {
+            background: #2c7a7b;
+        }
+        .button.disabled {
+            background: #ccc;
+            pointer-events: none;
+            color: #666;
+        }
+        a {
+            color: #38b2ac;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        ul li {
+            background: #f4f4f4;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zamówienie #{{ order.id }}</h1>
+        <div class="details">
+            <p><strong>Użytkownik:</strong> {{ order.user.username }}</p>
+            <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+            <p><strong>Data zamówienia:</strong> {{ order.date_of_order }}</p>
+            <p><strong>Data wygaśnięcia:</strong> {{ order.expiry_date }}</p>
+            <p><strong>Adres dostawy:</strong> {{ order.shipping_address }}</p>
+            <p><strong>Numer telefonu:</strong> {{ order.phone_number }}</p>
+            <p><strong>Łączna kwota:</strong> {{ order.total }} zł</p>
+            <p><strong>Lokalizacja odbioru:</strong> 
+                {% if order.location %}
+                    {{ order.location.address }}
+                {% else %}
+                    Brak
+                {% endif %}
+            </p>
+        </div>
+        
+        <h2>Produkty:</h2>
+        <ul>
+            {% for item in order.order_items.all %}
+                <li>{{ item.medication.name }} - {{ item.quantity }} szt., {{ item.subtotal }} zł</li>
+            {% empty %}
+                <li>Brak produktów w zamówieniu.</li>
+            {% endfor %}
+        </ul>
+
+        <div>
+            {% if order.status != 'expired' %}
+                <form method="POST" action="{% url 'mark_as_received' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="button">Oznacz jako zrealizowane</button>
+                </form>
+            {% else %}
+                <p class="button disabled">Zamówienie wygasło</p>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 20px;">
+            <a href="{% url 'manager' %}" class="button">Powrót</a>
+        </div>
+    </div>
+</body>
+</html>

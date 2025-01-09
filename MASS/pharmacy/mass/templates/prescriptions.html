@@ -1,0 +1,198 @@
+{% load get_item %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twoje Recepty</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0px 20px;
+            background: linear-gradient(120deg, #f0f9ff, #cce7f0);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #2c7a7b;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 1px 1px 5px rgba(44, 122, 123, 0.3);
+        }
+        .container {
+            max-width: 1200px;
+            width: 40%;
+            margin: 0 auto;
+        }
+        .prescription {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .prescription:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .prescription h2 {
+            font-size: 20px;
+            color: #319795;
+            margin-bottom: 10px;
+        }
+        .prescription p {
+            margin: 5px 0;
+        }
+        .prescription ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .prescription ul li {
+            margin-bottom: 5px;
+        }
+        .realized-status {
+            color: #38b2ac;
+            font-weight: bold;
+        }
+        .not-realized-status {
+            color: #f6ad55; /* Orange for "Not Realized" */
+            font-weight: bold;
+        }
+        .btn-primary {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #38b2ac, #2c7a7b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #319795, #285e61);
+            transform: translateY(-2px);
+        }
+        .add-prescription {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .add-prescription input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: calc(100% - 140px);
+            max-width: 400px;
+            margin-right: 10px;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .add-prescription input:focus {
+            border-color: #38b2ac;
+            box-shadow: 0 0 5px rgba(56, 178, 172, 0.5);
+        }
+        .add-prescription button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #38b2ac, #2c7a7b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .add-prescription button:hover {
+            background: linear-gradient(135deg, #319795, #285e61);
+        }
+        .messages {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .messages.success {
+            background-color: #d4f1f4;
+            color: #2c7a7b;
+        }
+        .messages.error {
+            background-color: #fdecea;
+            color: #c53030;
+        }
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 28px;
+            }
+            .prescription {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+{% include 'navbar.html' %}
+    <h1>Twoje Recepty</h1>
+    <div class="container">
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="messages {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+
+        {% if prescriptions.exists %}
+    {% for prescription in prescriptions %}
+        <div class="prescription">
+            <h2>Recepta ID: {{ prescription.prescription_ID }}</h2>
+            <p>Imię i nazwisko pacjenta: {{ prescription.patient_name }}</p>
+            <p>Data wystawienia: {{ prescription.date_prescribed }}</p>
+            <p>Leki:</p>
+            <ul>
+                {% for medication in prescription.medications.all %}
+                    <li>
+                        {{ medication.name }} - 
+                        {% if prescription.quantities %}
+                            {% with quantity=prescription.quantities|get_item:forloop.counter0 %}
+                                Ilość: {{ quantity }}
+                            {% endwith %}
+                        {% else %}
+                            Ilość: N/A
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <p>Status: 
+                {% if prescription.realized %}
+                    <span class="realized-status">Zrealizowana</span>
+                {% else %}
+                    <span class="not-realized-status">Niezrealizowana</span>
+                    <form action="{% url 'realize_prescription' prescription.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-primary">Zrealizuj</button>
+                    </form>
+                {% endif %}
+            </p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>Brak dodanych recept.</p>
+{% endif %}
+
+
+        <div class="add-prescription">
+            <h2>Dodaj nową receptę</h2>
+            <form method="POST" action="{% url 'add_prescription' %}">
+                {% csrf_token %}
+                <input type="text" name="prescription_id" placeholder="Wprowadź ID recepty" required>
+                <button type="submit">Dodaj receptę</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

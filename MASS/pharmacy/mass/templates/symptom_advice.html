@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Porady - MASS</title>
+    {% load static %}
+    <style>
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-size: cover;
+            background: url("{% static 'tlo/tloMass.jpg'%}") no-repeat center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0px 20px;
+            height: 100%;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            width: 450px;
+            padding: 40px 30px;
+            position: relative;
+            margin-top: 80px;
+            margin-bottom: 80px;
+        }
+        h1 {
+            font-size: 2.8rem;
+            color: #2c7a7b;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        textarea {
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            resize: none;
+        }
+        button {
+            background-color: #319795;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        button:hover {
+            background-color: #2c7a7b;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="container">
+        {% if advice %}
+            <h1>Porada dla objawu: {{ symptom }}</h1>
+            <p>{{ advice }}</p>
+            <h2>Zalecane leki:</h2>
+            <ul>
+                {% for medicine in medicines %}
+                    <li>
+                        <a href="{{ medicine.url }}" {% if medicine.url == "#" %} style="color: gray;" {% endif %}>
+                            {{ medicine.name }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+        {% elif error %}
+            <h1>Nie znaleziono porady</h1>
+            <p>{{ error }}</p>
+        {% else %}
+            <h1>Wprowadź objawy</h1>
+            <p>Wprowadź objawy, a nasz system doradzi odpowiednie leki lub suplementy.</p>
+            <a href="{% url 'symptom_form' %}">
+                <button>Przejdź do formularza</button>
+            </a>
+        {% endif %}
+    </div>
+</body>
+
+</html>
