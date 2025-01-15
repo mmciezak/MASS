@@ -1,29 +1,59 @@
-"""
-URL configuration for pharmacy project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
+from django.contrib.auth.views import LogoutView
 from django.urls import path, include
+
 from django.conf import settings
 from django.conf.urls.static import static
 
+from mass import views
+from mass.views import filter_list
+
 urlpatterns = [
     path("mass/", include("mass.urls")),
+    path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
     path("",include("mass.urls")),
-    
-]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path("", views.index, name="index"),
+    path("products/", filter_list, name="products"),
+    path("login/", views.login_page, name="loginPage"),
+    path("register/", views.register_page, name="registerPage"),
+    path('logout/', views.log_out_page, name='logOutPage'),
+    path('add_to_cart/<int:medication_id>/', views.add_to_cart, name='add_to_cart'),
+    path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
+
+    path('cart/', views.cart_view, name='cart_view'),
+    path('cart/checkout', views.checkout_view, name='checkout_view'),
+    path('cart/checkout/<int:prescription_id>/', views.checkout_view, name='checkout_view_with_prescription'),
+
+    #test
+    path('check-availability/', views.check_availability, name='check_availability'),
+
+    path('order-success/<int:order_id>/', views.order_success, name='order_success'),
+    path('my-account/', views.user_account_view, name='my_account'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+
+    path('products/product/<int:medication_id>/', views.product, name='product'),
+
+    path('prescriptions/', views.prescriptions_view, name='prescriptions_view'),
+    path('add-prescription/', views.add_prescription, name='add_prescription'),
+
+    path('realize-prescription/<int:prescription_id>/', views.realize_prescription, name='realize_prescription'),
+
+    path('manager/', views.pharmacist_view, name='manager'),
+    path('doctor/', views.doctor_view, name='doctor'),
+
+     path('symptoms/', views.symptom_advice_view, name='symptom_form'),
+    #path('checkout/', checkout_view, name='checkout_view'),
+    #path('checkout/<int:prescription_id>/', checkout_view, name='checkout_view_with_prescription'),
+
+    path('write_out_prescription/', views.write_out_prescription, name='write_out_prescription'),
+    path('write_out_prescription/success/', views.prescription_success, name='prescription_success'),
+
+    path('manager/order_info/<int:order_id>', views.order_info, name='order_info'),
+    path('manager/order_info/<int:order_id>/receive', views.mark_as_received, name='mark_as_received'),
+    path('manager/prescriptions', views.prescriptions_page_manager, name='prescriptions_page_manager'),
+
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
