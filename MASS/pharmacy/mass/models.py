@@ -49,7 +49,7 @@ class Location(models.Model):
 class MedicationStock(models.Model): # do kazdej lokacji bedzie przypisana okreslona ilosc towaru
     medication = models.ForeignKey(Medication, on_delete=models.CASCADE)
     location = models.ForeignKey(Location, on_delete=models.CASCADE) #polaczenie z apteka
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.IntegerField(default=0)
     reserved = models.PositiveIntegerField(default=0) #ilosc zarezerwowanych lekow(przy reserved==quantity nie mozna zamowiec tego leku)
 
     class Meta:
@@ -184,7 +184,19 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity} of {self.medication.name}"
 
+class PharmacyOrder(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Oczekujące'
+        COMPLETED = 'COMPLETED', 'Zrealizowane'
+        CANCELED = 'CANCELED', 'Anulowane'
 
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+
+class PharmacyOrderItem(models.Model):
+    order = models.ForeignKey(PharmacyOrder, on_delete=models.CASCADE, related_name='order_items')
+    medication = models.ForeignKey(Medication, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
 
 class Cart(models.Model):
     items = models.ManyToManyField(CartItem, blank=True)

@@ -204,6 +204,41 @@
                 </tbody>
             </table>
         </section>
+        <!-- Sekcja brakujących leków -->
+        <section>
+            <h2>Raport brakujących leków</h2>
+            <h3>{{ extended_user.location.address }}</h3>
+        
+            {% if missing_medications %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lek</th>
+                            <th>Wymagana ilość</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in missing_medications %}
+                            <tr>
+                                <td>{{ item.medication.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>
+                                    <form method="post" action="{% url 'place_order_for_missing_medications' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="medication_id" value="{{ item.medication.id }}">
+                                        <input type="hidden" name="quantity" value="{{ item.quantity }}">
+                                        <button type="submit" class="order-button">Złóż zamówienie</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Brak brakujących leków.</p>
+            {% endif %}
+        </section>
 
         <!-- Przycisk Wyloguj -->
         <div class="action-buttons">
@@ -215,7 +250,7 @@
     </main>
 
     <footer>
-        <p>Panel Zarządzania - Wspierane przez MASS</p>
+        <p>Panel Zarządzania - MASS</p>
     </footer>
 </body>
 </html>

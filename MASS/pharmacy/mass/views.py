@@ -3,9 +3,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from .forms import CustomUserCreationForm, CheckoutForm
-from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription, Location, MedicationStock
+from .models import Medication, Cart, CartItem, ExtendedUser, OrderItem, Order, Prescription, Location, MedicationStock, \
+    PharmacyOrder, PharmacyOrderItem
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.http import JsonResponse
 from .forms import SymptomForm
 import re
 import unidecode
@@ -216,7 +218,15 @@ def checkout_view(request, prescription_id=None):
                 # Usuwamy prescription_id z sesji
                 del request.session['prescription_id']
 
-            
+                # Sprawdzenie dostępności leków w magazynie
+            unavailable_items = []
+            for cart_item in cart_items:
+                stock = MedicationStock.objects.filter(location=location,
+                                                        medication=cart_item.medication).first()
+                if not stock or stock.quantity < cart_item.quantity:
+                    unavailable_items.append(cart_item.medication.name)
+                    report_missing_medication(location, cart_item.medication, cart_item.quantity)
+
             user.user_orders.add(order)
             # Czyszczenie koszyka użytkownika
             cart.items.all().delete()  # usuwa wszystkie cart item jakie byly w koszyku z bazy danych (inaczej przy nast dodaniu bedzie zla ilosc)
@@ -354,40 +364,7 @@ def is_manager(user):
 def is_doctor(user):
     return user.is_authenticated and hasattr(user, 'extendeduser') and user.extendeduser.is_doctor
 
-@user_passes_test(is_manager)
-def pharmacist_view(request):
-    extended_user = get_object_or_404(ExtendedUser, user=request.user)
-    user_location = extended_user.location  # Lokalizacja apteki
 
-    # Pobieramy wszystkie zamówienia z lokalizacji apteki
-    all_orders = Order.objects.filter(location=user_location).order_by('-date_of_order')
-    for order in all_orders:
-        order.set_status()
-
-    # Pobieramy wszystkie leki dostępne w systemie
-    #all_medications = Medication.objects.all()
-
-    # pobieramy leki dostepne w danej aptece
-    medications = MedicationStock.objects.filter(location=user_location)
-
-    # Pobieramy wszystkie recepty w systemie
-    all_prescriptions = Prescription.objects.all()
-
-    # Obsługa wyszukiwania recept
-    search_query = request.GET.get('search', None)
-    searched_prescriptions = None
-    if search_query:
-        searched_prescriptions = Prescription.objects.filter(
-            prescription_ID=search_query
-        )
-
-    return render(request, 'manager.html', {
-        'all_orders': all_orders,
-        'all_prescriptions': all_prescriptions,
-        'medications': medications,  # Przekazujemy wszystkie leki w systemie
-        'searched_prescriptions': searched_prescriptions,
-        'extended_user' : extended_user
-    })
 
 @user_passes_test(is_doctor)
 def doctor_view(request):
@@ -509,9 +486,37 @@ def order_info(request, order_id):
 @user_passes_test(is_manager)
 def mark_as_received(request, order_id):
     order = get_object_or_404(Order, id=order_id)
+
+    # Flag to track if there is enough stock for all items in the order
+    is_in_stock = True
+
+    # Loop through each order item and check if stock is sufficient
+    for item in order.order_items.all():
+        stock = MedicationStock.objects.filter(location=order.location, medication=item.medication).first()
+        if stock and stock.quantity < item.quantity:
+            # If there is not enough stock, mark as insufficient and break
+            is_in_stock = False
+            break
+
+    if not is_in_stock:
+        # Add an error message if stock is insufficient for any item
+        #messages.error(request, "Nie ma wystarczającej ilości towaru w magazynie, aby oznaczyć zamówienie jako otrzymane.")
+        return redirect('order_info', order_id=order.id)
+
+    # If there is sufficient stock, proceed with marking the order as received
     if order.status != Order.Status.EXPIRED:
         order.receive_order()
         order.save()
+
+        # Decrease the quantity of medications in the stock
+        for item in order.order_items.all():
+            # Fetch the stock for this medication at the order's location
+            stock = MedicationStock.objects.filter(location=order.location, medication=item.medication).first()
+
+            if stock:
+                # Decrease the stock by the order's quantity
+                delete_from_stock(order.location, item.medication, item.quantity)
+
     return redirect('order_info', order_id=order.id)
 
 
@@ -530,36 +535,166 @@ def prescriptions_page_manager(request):
     return render(request, 'prescriptions_page_manager.html', context)
 
 
-
-
-
-#test
-
-from django.http import JsonResponse
-
 def check_availability(request):
-    if request.method == 'GET':
-        location_id = request.GET.get('location_id')
-        user = ExtendedUser.objects.get(user=request.user)
-        cart_items = user.cart.items.all()
-
+    if request.method == 'POST':
+        location_id = request.POST.get('location_id')  # Zmienione na POST dla bardziej spójnego działania
         if not location_id:
-            return JsonResponse({'status': 'error', 'message': 'Location not selected.'})
+            return JsonResponse({'status': 'error', 'message': 'Lokalizacja nie została wybrana.'})
 
         try:
             location = Location.objects.get(id=location_id)
         except Location.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Invalid location.'})
+            return JsonResponse({'status': 'error', 'message': 'Niepoprawna lokalizacja.'})
 
-        availability = {}
+        user = ExtendedUser.objects.get(user=request.user)
+        cart_items = user.cart.items.all()  # Pobieramy leki z koszyka użytkownika
+
+        unavailable_items = []  # Lista leków niedostępnych w lokalizacji
+
         for item in cart_items:
             stock = MedicationStock.objects.filter(location=location, medication=item.medication).first()
-            if stock and stock.quantity - stock.reserved >= item.quantity:
-                availability[item.medication.name] = "Dostępne"
+            if stock and stock.quantity >= item.quantity:
+                # Lek jest dostępny w wymaganej ilości
+                continue
             else:
-                availability[item.medication.name] = "Niedostępne"
+                # Lek niedostępny lub niewystarczająca ilość
+                unavailable_items.append({
+                    'medication_name': item.medication.name,
+                    'required_quantity': item.quantity,
+                    'available_quantity': stock.quantity if stock else 0
+                })
+                # Dodanie do raportu brakujących leków
+                report_missing_medication(location, item.medication, item.quantity)
 
-        return JsonResponse({'status': 'success', 'availability': availability})
+        return JsonResponse({
+            'status': 'success',
+            'unavailable_items': unavailable_items
+        })
+
+def report_missing_medication(location, medication, quantity):
+    order, created = PharmacyOrder.objects.get_or_create(
+        location=location,
+        status=PharmacyOrder.Status.PENDING
+    )
+    if created:
+        order.save()
+
+    order_item = order.order_items.filter(medication=medication).first()
+    if order_item:
+        order_item.quantity += quantity
+        order_item.save()
+    else:
+        PharmacyOrderItem.objects.create(order=order, medication=medication, quantity=quantity)
+    order.save()
+
+def create_pharmacy_order(location, medication, quantity):
+    order, created = PharmacyOrder.objects.get_or_create(
+        location=location
+    )
+    if created:
+        order.save()
+
+    order_item = order.order_items.filter(medication=medication).first()
+    if order_item:
+        order_item.quantity += quantity
+    else:
+        PharmacyOrderItem.objects.create(order=order, medication=medication, quantity=quantity)
+    order.save()
+
+def add_to_stock(location, medication, quantity):
+    stock, created = MedicationStock.objects.get_or_create(location=location, medication=medication)
+    if created:
+        stock.quantity = quantity
+    else:
+        stock.quantity += quantity
+    stock.save()
+
+    create_pharmacy_order(location, medication, quantity)
+
+def delete_from_stock(location, medication, quantity):
+    # Fetch the stock for this location and medication
+    stock = MedicationStock.objects.filter(location=location, medication=medication).first()
+
+    if stock:
+        # If quantity to delete is less than or equal to current stock quantity
+        if stock.quantity >= quantity:
+            stock.quantity -= quantity  # Decrease the stock by the specified quantity
+
+            # If the stock quantity becomes 0, remove it from the database
+            if stock.quantity == 0:
+                stock.delete()
+            else:
+                stock.save()  # Otherwise, save the updated stock quantity
+
+@user_passes_test(is_manager)
+def pharmacist_view(request):
+    extended_user = get_object_or_404(ExtendedUser, user=request.user)
+    user_location = extended_user.location  # Lokalizacja apteki
+
+    # Pobieramy wszystkie zamówienia z lokalizacji apteki
+    all_orders = Order.objects.filter(location=user_location).order_by('-date_of_order')
+    for order in all_orders:
+        order.set_status()
+
+    # Pobieramy wszystkie leki dostępne w systemie
+    #all_medications = Medication.objects.all()
+
+    # pobieramy leki dostepne w danej aptece
+    medications = MedicationStock.objects.filter(location=user_location)
+
+    # Pobieramy wszystkie recepty w systemie
+    all_prescriptions = Prescription.objects.all()
+
+    # Pobieramy zamówienia brakujących leków
+    pending_order = PharmacyOrder.objects.filter(location=user_location, status=PharmacyOrder.Status.PENDING).first()
+    missing_medications = pending_order.order_items.all() if pending_order else []
+
+    # Obsługa wyszukiwania recept
+    search_query = request.GET.get('search', None)
+    searched_prescriptions = None
+    if search_query:
+        searched_prescriptions = Prescription.objects.filter(
+            prescription_ID=search_query
+        )
+
+    return render(request, 'manager.html', {
+        'all_orders': all_orders,
+        'all_prescriptions': all_prescriptions,
+        'medications': medications,
+        'searched_prescriptions': searched_prescriptions,
+        'extended_user' : extended_user,
+        'missing_medications': missing_medications,
+    })
+
+@user_passes_test(is_manager)
+def place_order_for_missing_medications(request):
+    if request.method == 'POST':
+        medication_id = request.POST.get('medication_id')
+        quantity = request.POST.get('quantity')
+
+        # Pobierz lek na podstawie ID
+        medication = get_object_or_404(Medication, id=medication_id)
+
+        extended_user = get_object_or_404(ExtendedUser, user=request.user)
+        user_location = extended_user.location
+
+        # Tworzenie zamówienia na brakujący lek
+        add_to_stock(user_location, medication, int(quantity))
+
+        # Pobierz zamówienie z brakującymi lekami
+        pending_order = PharmacyOrder.objects.filter(
+            location=user_location,
+            status=PharmacyOrder.Status.PENDING,
+        ).first()
+
+        if pending_order:
+            # Pobierz element zamówienia dla brakującego leku
+            order_item = pending_order.order_items.filter(medication=medication).first()
+            if order_item:
+                order_item.delete()
+
+        return redirect('manager')
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
 
 # słownik symptomów i ich porad/lekarstw

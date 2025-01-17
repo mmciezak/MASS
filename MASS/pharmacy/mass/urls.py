@@ -47,6 +47,7 @@ urlpatterns = [
     path('manager/order_info/<int:order_id>', views.order_info, name='order_info'),
     path('manager/order_info/<int:order_id>/receive', views.mark_as_received, name='mark_as_received'),
     path('manager/prescriptions', views.prescriptions_page_manager, name='prescriptions_page_manager'),
+    path('place_order_for_missing_medications/', views.place_order_for_missing_medications,
+    name='place_order_for_missing_medications'),
 
-
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
