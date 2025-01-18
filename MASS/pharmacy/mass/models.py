@@ -33,7 +33,7 @@ class Medication(models.Model):
     side_effects = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    image = models.ImageField(upload_to='MASS-main\image', null=True, blank=True)
+    image = models.ImageField(upload_to='media\image', null=True, blank=True)
     #stock_quantity = models.PositiveIntegerField(default=0)
     category_tag = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
     #symptoms = models.ManyToManyField(Symptom, related_name='medications')
@@ -192,6 +192,10 @@ class PharmacyOrder(models.Model):
 
     location = models.ForeignKey(Location, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+
+    def __str__(self):
+        return f"{self.location} {self.status}"
+
 
 class PharmacyOrderItem(models.Model):
     order = models.ForeignKey(PharmacyOrder, on_delete=models.CASCADE, related_name='order_items')

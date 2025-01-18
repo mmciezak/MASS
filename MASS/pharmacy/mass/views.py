@@ -572,12 +572,17 @@ def check_availability(request):
         })
 
 def report_missing_medication(location, medication, quantity):
-    order, created = PharmacyOrder.objects.get_or_create(
+    # Pobierz najnowsze zamówienie PENDING lub utwórz nowe
+    order = PharmacyOrder.objects.filter(
         location=location,
         status=PharmacyOrder.Status.PENDING
-    )
-    if created:
-        order.save()
+    ).order_by('-id').first()  # Pobiera najnowsze zamówienie
+
+    if not order:
+        order = PharmacyOrder.objects.create(
+            location=location,
+            status=PharmacyOrder.Status.PENDING
+        )
 
     order_item = order.order_items.filter(medication=medication).first()
     if order_item:
@@ -588,20 +593,22 @@ def report_missing_medication(location, medication, quantity):
     order.save()
 
 def create_pharmacy_order(location, medication, quantity):
-    order, created = PharmacyOrder.objects.get_or_create(
-        location=location
-    )
-    if created:
-        order.save()
+    # Tworzymy nowe zamówienie, jeśli potrzebne
+    order = PharmacyOrder.objects.filter(location=location).order_by('-id').first()
+    if not order:
+        order = PharmacyOrder.objects.create(location=location)
 
+    # Dodajemy lek do zamówienia
     order_item = order.order_items.filter(medication=medication).first()
     if order_item:
         order_item.quantity += quantity
+        order_item.save()
     else:
         PharmacyOrderItem.objects.create(order=order, medication=medication, quantity=quantity)
-    order.save()
+
 
 def add_to_stock(location, medication, quantity):
+    # Dodajemy lek do magazynu
     stock, created = MedicationStock.objects.get_or_create(location=location, medication=medication)
     if created:
         stock.quantity = quantity
@@ -609,7 +616,9 @@ def add_to_stock(location, medication, quantity):
         stock.quantity += quantity
     stock.save()
 
+    # Tworzymy zamówienie dla dodanych leków
     create_pharmacy_order(location, medication, quantity)
+
 
 def delete_from_stock(location, medication, quantity):
     # Fetch the stock for this location and medication
@@ -681,17 +690,21 @@ def place_order_for_missing_medications(request):
         # Tworzenie zamówienia na brakujący lek
         add_to_stock(user_location, medication, int(quantity))
 
-        # Pobierz zamówienie z brakującymi lekami
+        # Pobierz najnowsze zamówienie PENDING
         pending_order = PharmacyOrder.objects.filter(
             location=user_location,
-            status=PharmacyOrder.Status.PENDING,
-        ).first()
+            status=PharmacyOrder.Status.PENDING
+        ).order_by('-id').first()  # Pracujemy tylko z najnowszym zamówieniem
 
         if pending_order:
-            # Pobierz element zamówienia dla brakującego leku
-            order_item = pending_order.order_items.filter(medication=medication).first()
-            if order_item:
-                order_item.delete()
+                # Pobierz element zamówienia dla brakującego leku
+                order_item = pending_order.order_items.filter(medication=medication).first()
+                if order_item:
+                    order_item.delete()
+
+                if not pending_order.order_items.exists():
+                    pending_order.status = PharmacyOrder.Status.COMPLETED
+                    pending_order.save()
 
         return redirect('manager')
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})

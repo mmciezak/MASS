@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='medication',
             name='image',
-            field=models.ImageField(blank=True, null=True, upload_to='MASS-main\\image'),
+            field=models.ImageField(blank=True, null=True, upload_to='media\\image'),
         ),
         migrations.AlterField(
             model_name='medication',
