@@ -106,7 +106,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "MASS/pharmacy/media/static",
+    BASE_DIR / "static",
 ]
 
 # Default primary key field type
