@@ -7,12 +7,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <style>
         body {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
             font-family: 'Arial', sans-serif;
             background: rgba(240, 239, 239, 0.37);
             margin: 0;
             padding: 0;
         }
-    
+        html {
+            height: 100%;
+        }
         header {
             background-color: #2c7a7b;
             color: #ffffff;
@@ -26,6 +31,7 @@
         }
     
         main {
+            flex: 1;
             padding: 20px;
         }
     
