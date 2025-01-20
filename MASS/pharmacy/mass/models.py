@@ -1,3 +1,5 @@
+import random
+
 from django.contrib.auth.models import User
 from django.db import models
 from datetime import datetime
@@ -111,7 +113,7 @@ class CartItem(models.Model):
 # Recepta jest dodawana do systemu a użytkownik dodaje ją do swojego konta dzięki prescription_ID
 #from django.contrib.postgres.fields import ArrayField
 class Prescription(models.Model):
-    prescription_ID = models.DecimalField(max_digits=4, decimal_places=0)
+    prescription_ID = models.CharField(max_length=4, unique=True, editable=False)
     patient_name = models.CharField(max_length=255)  # User
     date_prescribed = models.DateField(default=datetime.now)
     medications = models.ManyToManyField(Medication)
@@ -133,6 +135,15 @@ class Prescription(models.Model):
     def mark_as_added(self):
         self.added = True
         self.save()
+
+    @classmethod
+    def generate_id(cls):
+        while True:
+            new_id = f"{random.randint(1000, 9999)}"
+            if not Prescription.objects.filter(prescription_ID=new_id).exists():
+                return new_id
+
+
 
 
 

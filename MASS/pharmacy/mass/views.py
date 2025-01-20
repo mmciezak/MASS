@@ -463,11 +463,12 @@ def write_out_prescription(request):
 
         return redirect("/write_out_prescription/success/")
 
-    # Handle GET request
+    prescription_ID = Prescription.generate_id()
     medications = Medication.objects.all()
     context = {
         "medications": medications,
         "today": now().date(),
+        "prescription_ID": prescription_ID,
     }
     return render(request, 'add_prescription.html', context)
 
