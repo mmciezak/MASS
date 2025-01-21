@@ -103,14 +103,25 @@
         </ul>
 
         <div>
-            {% if order.status != 'expired' %}
-                <form method="POST" action="{% url 'mark_as_received' order.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="button">Oznacz jako zrealizowane</button>
-                </form>
-            {% else %}
-                <p class="button disabled">Zamówienie wygasło</p>
-            {% endif %}
+        {% if order.status == 'pending' %}
+            <!-- Przyciski dla zamówienia w statusie "Pending" -->
+            <form method="POST" action="{% url 'mark_as_ready' order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="button">Oznacz jako gotowe</button>
+            </form>
+        {% elif order.status == 'ready' %}
+            <!-- Przyciski dla zamówienia w statusie "Ready" -->
+            <form method="POST" action="{% url 'mark_as_received' order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="button">Oznacz jako zrealizowane</button>
+            </form>
+        {% elif order.status == 'expired' %}
+            <!-- Informacja dla zamówienia wygasłego -->
+            <p class="button disabled">Zamówienie wygasło</p>
+        {% elif order.status == 'received' %}
+            <!-- Informacja dla zamówienia zrealizowanego -->
+            <p class="button disabled">Zamówienie zrealizowane</p>
+        {% endif %}
         </div>
 
         <div style="margin-top: 20px;">

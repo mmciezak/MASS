@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from datetime import datetime
 
-
+from pip._vendor.rich.status import Status
 
 
 class Symptom(models.Model):
@@ -35,7 +35,7 @@ class Medication(models.Model):
     side_effects = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    image = models.ImageField(upload_to='media\image', null=True, blank=True)
+    image = models.ImageField(upload_to='MASS/pharmacy/media/image', null=True, blank=True)
     #stock_quantity = models.PositiveIntegerField(default=0)
     category_tag = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
     #symptoms = models.ManyToManyField(Symptom, related_name='medications')
@@ -155,6 +155,7 @@ def default_expiry_date():
 class Order(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
+        READY = 'ready', 'Ready'
         RECEIVED = 'received', 'Received'
         EXPIRED = 'expired', 'Expired'
 
@@ -166,7 +167,7 @@ class Order(models.Model):
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, blank=True)
-    expiry_date = models.DateField(default=default_expiry_date) # klient ma 7 dni na odebranie zamowienia, potem ustawia sie na 'expired'
+    expiry_date = models.DateField(default=default_expiry_date)
 
     def calculate_total(self):
         total = sum(item.subtotal() for item in self.order_items.all())
@@ -174,12 +175,17 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.user.username} {self.date_of_order} {self.shipping_address} {self.phone_number}"
-    
-    def set_status(self):
+
+    def set_ready(self):
+        self.status = self.Status.READY
+        self.expiry_date = datetime.now().date() + timedelta(days=7)
+        self.save()
+
+    def set_expired(self):
         if datetime.now().date()>self.expiry_date:
             self.status = self.Status.EXPIRED
     
-    def receive_order(self): # oznacza zamowienie jako zreailzowane
+    def set_received(self): # oznacza zamowienie jako zreailzowane
         self.status = self.Status.RECEIVED
 
 

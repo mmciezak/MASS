@@ -485,41 +485,58 @@ def order_info(request, order_id):
     return render(request, 'order_info.html', {'order' : order})
 
 @user_passes_test(is_manager)
-def mark_as_received(request, order_id):
+def mark_as_ready(request, order_id):
+    # Pobierz zamówienie na podstawie ID
     order = get_object_or_404(Order, id=order_id)
 
-    # Flag to track if there is enough stock for all items in the order
-    is_in_stock = True
-
-    # Loop through each order item and check if stock is sufficient
-    for item in order.order_items.all():
-        stock = MedicationStock.objects.filter(location=order.location, medication=item.medication).first()
-        if stock and stock.quantity < item.quantity:
-            # If there is not enough stock, mark as insufficient and break
-            is_in_stock = False
-            break
-
-    if not is_in_stock:
-        # Add an error message if stock is insufficient for any item
-        #messages.error(request, "Nie ma wystarczającej ilości towaru w magazynie, aby oznaczyć zamówienie jako otrzymane.")
+    # Sprawdź, czy zamówienie jest już gotowe lub odebrane
+    if order.status in [Order.Status.READY, Order.Status.RECEIVED]:
+        messages.error(request, "To zamówienie jest już gotowe lub zostało odebrane.")
         return redirect('order_info', order_id=order.id)
 
-    # If there is sufficient stock, proceed with marking the order as received
-    if order.status != Order.Status.EXPIRED:
-        order.receive_order()
-        order.save()
+    # Sprawdź dostępność zapasów dla każdego elementu w zamówieniu
+    insufficient_stock_items = []
+    for item in order.order_items.all():
+        stock = MedicationStock.objects.filter(location=order.location, medication=item.medication).first()
+        if not stock or stock.quantity < item.quantity:
+            insufficient_stock_items.append(item)
 
-        # Decrease the quantity of medications in the stock
-        for item in order.order_items.all():
-            # Fetch the stock for this medication at the order's location
-            stock = MedicationStock.objects.filter(location=order.location, medication=item.medication).first()
+    # Jeśli jakikolwiek produkt nie jest dostępny w wystarczającej ilości
+    if insufficient_stock_items:
+        messages.error(
+            request,
+            f"Brakuje zapasów dla następujących leków: {', '.join([item.medication.name for item in insufficient_stock_items])}"
+        )
+        return redirect('order_info', order_id=order.id)
 
-            if stock:
-                # Decrease the stock by the order's quantity
-                delete_from_stock(order.location, item.medication, item.quantity)
+    # Jeśli wszystkie produkty są dostępne, oznacz zamówienie jako gotowe
+    order.set_ready()
+    order.save()
+
 
     return redirect('order_info', order_id=order.id)
 
+@user_passes_test(is_manager)
+def mark_as_received(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    # Sprawdź, czy zamówienie jest gotowe do odbioru
+    if order.status != Order.Status.READY:
+        return redirect('order_info', order_id=order.id)
+
+    # Oznacz zamówienie jako odebrane
+    order.set_received()
+    order.save()
+
+    # Zmniejsz ilości w zapasach
+    for item in order.order_items.all():
+        stock = MedicationStock.objects.filter(location=order.location, medication=item.medication).first()
+        if stock:
+            stock.quantity -= item.quantity
+            stock.save()
+
+
+    return redirect('order_info', order_id=order.id)
 
 @user_passes_test(is_manager)
 def prescriptions_page_manager(request):
@@ -644,7 +661,7 @@ def pharmacist_view(request):
     # Pobieramy wszystkie zamówienia z lokalizacji apteki
     all_orders = Order.objects.filter(location=user_location).order_by('-date_of_order')
     for order in all_orders:
-        order.set_status()
+        order.set_expired()
 
     # Pobieramy wszystkie leki dostępne w systemie
     #all_medications = Medication.objects.all()
