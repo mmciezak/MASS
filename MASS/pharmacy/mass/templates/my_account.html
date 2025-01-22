@@ -93,8 +93,8 @@
             <h2>Twoje konto</h2>
             <p><strong>Email:</strong> {{ user.email }}</p>
             {% if extended_user %}
-                <p><strong>Numer telefonu:</strong> {{ extended_user.phone_number }}</p>
-                <p><strong>Adres:</strong> {{ extended_user.address }}</p>
+                <!--<p><strong>Numer telefonu:</strong> {{ extended_user.phone_number }}</p>
+                <p><strong>Adres:</strong> {{ extended_user.address }}</p>-->
             {% else %}
                 <p><em>Dodatkowe informacje o profilu nie są dostępne.</em></p>
             {% endif %}
@@ -111,6 +111,9 @@
                             <strong>Data:</strong> {{ order.date_of_order }} <br>
                             <strong>Suma:</strong> PLN {{ order.total }} <br>
                             <strong>Status:</strong> {{ order.status }} <br>
+                            <strong>Lokalizacja:</strong> {{ order.location }} <br>
+                            
+                            <strong>Data upłynięcia:</strong> {{ order.expiry_date }} <br>
                         </li>
                     {% endfor %}
                 </ul>

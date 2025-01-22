@@ -64,7 +64,7 @@
 <body>
 {% include 'navbar.html' %}
     <div class="container">
-        <h1>Co boli?</h1>
+        <h1>Podaj swoje objawy:</h1>
         <form method="post">
             {% csrf_token %}
             <textarea name="symptoms" rows="6" placeholder="Opisz swoje objawy tutaj..."></textarea>

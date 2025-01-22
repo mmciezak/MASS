@@ -767,7 +767,7 @@ def remove_polish_chars(text):
 # Funkcja dopasowująca symptomy
 def match_symptom(user_input):
     synonyms = {
-        "ból głowy": ["ból głowy", "głowa", "migrena", "bole w glowie", "boli mnie glowa"],
+        "ból głowy": ["ból głowy", "bol glowy", "głowa", "migrena", "bole w glowie", "boli mnie glowa"],
         "kaszel": ["kaszel", "kaszlę", "kaszle", "mam ataki kaszlu"],
         "ból brzucha": ["brzuch", "bol brzucha", "bóle brzucha", "boli mnie brzuch", "boli brzuch"],
         "gorączka": ["gorączka", "temperatura", "mam temperature", "goraczka"],
@@ -779,14 +779,11 @@ def match_symptom(user_input):
     # Usuwanie polskich znaków
     user_input = remove_polish_chars(user_input.lower())
 
-    # Rozbijanie tekstu na słowa
-    tokens = re.findall(r'\b\w+\b', user_input)
-
     # Sprawdzanie dopasowania
     for symptom, keywords in synonyms.items():
         for keyword in keywords:
             keyword_clean = remove_polish_chars(keyword.lower())
-            if any(keyword_clean in token for token in tokens):
+            if keyword_clean in user_input:
                 return symptom, SYMPTOM_ADVICE.get(symptom, "Brak szczegółowych porad.")
     
     return None, "Nie znaleziono pasujących objawów."
@@ -797,7 +794,7 @@ def symptom_advice_view(request):
         user_input = request.POST.get("symptoms", "").lower()
         matched_symptom, advice_data = match_symptom(user_input)
         
-        if advice_data:
+        if isinstance(advice_data, dict):
             # Pobieranie leków z bazy danych
             medicines = []
             for medicine_name in advice_data["medicines"]:

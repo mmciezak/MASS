@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from datetime import datetime
 
-from pip._vendor.rich.status import Status
 
 
 class Symptom(models.Model):
