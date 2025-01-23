@@ -748,7 +748,7 @@ SYMPTOM_ADVICE = {
     },
     "katar":{
         "advice": "Pij dużo płynów, takich jak woda, herbaty ziołowe, czy buliony, aby rozrzedzić wydzielinę i ułatwić jej odpływ. Staraj się unikać dymu papierosowego, intensywnych zapachów, czy alergenów, które mogą nasilać objawy.",
-        "medicines": ["Otrivin 0,1/%/ aerozol do nosa10 ml", "Sinupret extract 160 mg tabletki drażowane 20 szt."]
+        "medicines": ["Otrivin 0,1% aerozol do nosa10 ml", "Sinupret extract 160 mg tabletki drażowane 20 szt."]
     },
     "ból stawów":{
         "advice": "Przyłóż ciepłe lub zimne okłady oraz rób łagodne ćwiczenia poprawiające ruchomość i zmniejszające napięcie.",
